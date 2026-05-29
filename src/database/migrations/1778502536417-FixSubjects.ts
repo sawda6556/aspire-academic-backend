@@ -1,0 +1,122 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class FixSubjects1778502536417 implements MigrationInterface {
+    name = 'FixSubjects1778502536417'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" DROP CONSTRAINT "FK_tutor_profiles_user"`);
+        await queryRunner.query(`ALTER TABLE "parent_profiles" DROP CONSTRAINT "FK_parent_profiles_user"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP CONSTRAINT "FK_student_profiles_user"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP CONSTRAINT "FK_student_profiles_parent"`);
+        await queryRunner.query(`CREATE TYPE "public"."subjects_category_enum" AS ENUM('Academic', 'Primary School', 'Secondary School (GCSE)', 'A-Level / Advanced', 'Islamic Studies', 'Languages', 'University & Adult Learning', 'Skills & Development', 'Special Support')`);
+        await queryRunner.query(`CREATE TYPE "public"."subjects_level_enum" AS ENUM('KS1', 'KS2', 'KS3', 'GCSE', 'A-Level', 'University', 'Adult', 'General')`);
+        await queryRunner.query(`CREATE TABLE "subjects" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "category" "public"."subjects_category_enum" NOT NULL, "level" "public"."subjects_level_enum" NOT NULL DEFAULT 'General', CONSTRAINT "PK_1a023685ac2b051b4e557b0b280" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."bookings_status_enum" AS ENUM('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED')`);
+        await queryRunner.query(`CREATE TABLE "bookings" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tutor_id" uuid NOT NULL, "student_id" uuid NOT NULL, "start_time" TIMESTAMP NOT NULL, "end_time" TIMESTAMP NOT NULL, "status" "public"."bookings_status_enum" NOT NULL DEFAULT 'PENDING', "is_trial" boolean NOT NULL DEFAULT false, "video_meeting_url" character varying, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_bee6805982cc1e248e94ce94957" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "availability" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tutor_id" uuid NOT NULL, "day_of_week" integer NOT NULL, "start_time" TIME NOT NULL, "end_time" TIME NOT NULL, CONSTRAINT "PK_05a8158cf1112294b1c86e7f1d3" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "slug" character varying NOT NULL, "icon_url" character varying, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_8b0be371d28245da6e4f4b61878" UNIQUE ("name"), CONSTRAINT "UQ_420d9f679d41281f282f5bc7d09" UNIQUE ("slug"), CONSTRAINT "PK_24dbc6126a28ff948da33e97d3b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "resource_reviews" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "resource_id" uuid NOT NULL, "user_id" uuid NOT NULL, "rating" integer NOT NULL, "comment" text NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_fc45cd2f120860b525a5a364a6d" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."resources_status_enum" AS ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED')`);
+        await queryRunner.query(`CREATE TABLE "resources" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "tutor_id" uuid NOT NULL, "title" character varying NOT NULL, "description" text NOT NULL, "price" numeric(10,2) NOT NULL, "file_url" character varying NOT NULL, "preview_url" character varying, "category_id" uuid NOT NULL, "subjects" jsonb, "grade_level" character varying, "status" "public"."resources_status_enum" NOT NULL DEFAULT 'DRAFT', "average_rating" double precision NOT NULL DEFAULT '0', "review_count" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_632484ab9dff41bba94f9b7c85e" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "resource_purchases" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "user_id" uuid NOT NULL, "resource_id" uuid NOT NULL, "price_at_purchase" numeric(10,2) NOT NULL, "stripe_payment_id" character varying, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_0fb91164083806252b035e04f29" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "tutor_subjects" ("tutor_id" uuid NOT NULL, "subject_id" uuid NOT NULL, CONSTRAINT "PK_992aee545ba6e6e7b782dc01e3f" PRIMARY KEY ("tutor_id", "subject_id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_664d16e6090d860740f7142a10" ON "tutor_subjects" ("tutor_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_3f5eae36ca769b75f2df0e602a" ON "tutor_subjects" ("subject_id") `);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ADD "address_proof_url" character varying NOT NULL`);
+        await queryRunner.query(`CREATE TYPE "public"."student_profiles_verification_status_enum" AS ENUM('PENDING', 'APPROVED', 'REJECTED')`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD "verification_status" "public"."student_profiles_verification_status_enum" NOT NULL DEFAULT 'PENDING'`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD "id_document_url" character varying`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD "verified_at" TIMESTAMP DEFAULT now()`);
+        await queryRunner.query(`ALTER TYPE "public"."verification_status" RENAME TO "verification_status_old"`);
+        await queryRunner.query(`CREATE TYPE "public"."tutor_profiles_verification_status_enum" AS ENUM('PENDING', 'APPROVED', 'REJECTED')`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verification_status" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verification_status" TYPE "public"."tutor_profiles_verification_status_enum" USING "verification_status"::"text"::"public"."tutor_profiles_verification_status_enum"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verification_status" SET DEFAULT 'PENDING'`);
+        await queryRunner.query(`DROP TYPE "public"."verification_status_old"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "id_document_url" SET NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verified_at" SET NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verified_at" SET DEFAULT now()`);
+        await queryRunner.query(`ALTER TYPE "public"."user_type" RENAME TO "user_type_old"`);
+        await queryRunner.query(`CREATE TYPE "public"."users_user_type_enum" AS ENUM('TUTOR', 'PARENT', 'STUDENT', 'ADMIN')`);
+        await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "user_type" TYPE "public"."users_user_type_enum" USING "user_type"::"text"::"public"."users_user_type_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."user_type_old"`);
+        await queryRunner.query(`ALTER TYPE "public"."gender" RENAME TO "gender_old"`);
+        await queryRunner.query(`CREATE TYPE "public"."users_gender_enum" AS ENUM('MALE', 'FEMALE')`);
+        await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "gender" TYPE "public"."users_gender_enum" USING "gender"::"text"::"public"."users_gender_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."gender_old"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ADD CONSTRAINT "FK_17e26178a201e33850c0b59dbfb" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_profiles" ADD CONSTRAINT "FK_356597a0b1ed805fc5dce95862d" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD CONSTRAINT "FK_cef016a0d95e26ae7c0f167ec28" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD CONSTRAINT "FK_9a0c35203de60703780867a18ac" FOREIGN KEY ("parent_id") REFERENCES "parent_profiles"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "bookings" ADD CONSTRAINT "FK_fea901986f96ffe49a6714cc922" FOREIGN KEY ("tutor_id") REFERENCES "tutor_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "bookings" ADD CONSTRAINT "FK_802239bcb6f913e1b959ee587ba" FOREIGN KEY ("student_id") REFERENCES "student_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "availability" ADD CONSTRAINT "FK_913f0cf9c51738b297844043156" FOREIGN KEY ("tutor_id") REFERENCES "tutor_profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "resource_reviews" ADD CONSTRAINT "FK_f51ea61a140ca4560779efc7fb3" FOREIGN KEY ("resource_id") REFERENCES "resources"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "resource_reviews" ADD CONSTRAINT "FK_8389ee5fc4b9329421997d9d153" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "resources" ADD CONSTRAINT "FK_4f10c06153f836e2bd1ec4d33d8" FOREIGN KEY ("tutor_id") REFERENCES "tutor_profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "resources" ADD CONSTRAINT "FK_42a91403d5498bcd3cde20a3980" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "resource_purchases" ADD CONSTRAINT "FK_81acb316adcdbab24e02169616c" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "resource_purchases" ADD CONSTRAINT "FK_179f72a184f9f94b2b97c25a88a" FOREIGN KEY ("resource_id") REFERENCES "resources"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "tutor_subjects" ADD CONSTRAINT "FK_664d16e6090d860740f7142a106" FOREIGN KEY ("tutor_id") REFERENCES "tutor_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
+        await queryRunner.query(`ALTER TABLE "tutor_subjects" ADD CONSTRAINT "FK_3f5eae36ca769b75f2df0e602af" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "tutor_subjects" DROP CONSTRAINT "FK_3f5eae36ca769b75f2df0e602af"`);
+        await queryRunner.query(`ALTER TABLE "tutor_subjects" DROP CONSTRAINT "FK_664d16e6090d860740f7142a106"`);
+        await queryRunner.query(`ALTER TABLE "resource_purchases" DROP CONSTRAINT "FK_179f72a184f9f94b2b97c25a88a"`);
+        await queryRunner.query(`ALTER TABLE "resource_purchases" DROP CONSTRAINT "FK_81acb316adcdbab24e02169616c"`);
+        await queryRunner.query(`ALTER TABLE "resources" DROP CONSTRAINT "FK_42a91403d5498bcd3cde20a3980"`);
+        await queryRunner.query(`ALTER TABLE "resources" DROP CONSTRAINT "FK_4f10c06153f836e2bd1ec4d33d8"`);
+        await queryRunner.query(`ALTER TABLE "resource_reviews" DROP CONSTRAINT "FK_8389ee5fc4b9329421997d9d153"`);
+        await queryRunner.query(`ALTER TABLE "resource_reviews" DROP CONSTRAINT "FK_f51ea61a140ca4560779efc7fb3"`);
+        await queryRunner.query(`ALTER TABLE "availability" DROP CONSTRAINT "FK_913f0cf9c51738b297844043156"`);
+        await queryRunner.query(`ALTER TABLE "bookings" DROP CONSTRAINT "FK_802239bcb6f913e1b959ee587ba"`);
+        await queryRunner.query(`ALTER TABLE "bookings" DROP CONSTRAINT "FK_fea901986f96ffe49a6714cc922"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP CONSTRAINT "FK_9a0c35203de60703780867a18ac"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP CONSTRAINT "FK_cef016a0d95e26ae7c0f167ec28"`);
+        await queryRunner.query(`ALTER TABLE "parent_profiles" DROP CONSTRAINT "FK_356597a0b1ed805fc5dce95862d"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" DROP CONSTRAINT "FK_17e26178a201e33850c0b59dbfb"`);
+        await queryRunner.query(`CREATE TYPE "public"."gender_old" AS ENUM('MALE', 'FEMALE')`);
+        await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "gender" TYPE "public"."gender_old" USING "gender"::"text"::"public"."gender_old"`);
+        await queryRunner.query(`DROP TYPE "public"."users_gender_enum"`);
+        await queryRunner.query(`ALTER TYPE "public"."gender_old" RENAME TO "gender"`);
+        await queryRunner.query(`CREATE TYPE "public"."user_type_old" AS ENUM('TUTOR', 'PARENT', 'STUDENT')`);
+        await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "user_type" TYPE "public"."user_type_old" USING "user_type"::"text"::"public"."user_type_old"`);
+        await queryRunner.query(`DROP TYPE "public"."users_user_type_enum"`);
+        await queryRunner.query(`ALTER TYPE "public"."user_type_old" RENAME TO "user_type"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verified_at" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verified_at" DROP NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "id_document_url" DROP NOT NULL`);
+        await queryRunner.query(`CREATE TYPE "public"."verification_status_old" AS ENUM('PENDING', 'APPROVED', 'REJECTED')`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verification_status" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verification_status" TYPE "public"."verification_status_old" USING "verification_status"::"text"::"public"."verification_status_old"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ALTER COLUMN "verification_status" SET DEFAULT 'PENDING'`);
+        await queryRunner.query(`DROP TYPE "public"."tutor_profiles_verification_status_enum"`);
+        await queryRunner.query(`ALTER TYPE "public"."verification_status_old" RENAME TO "verification_status"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP COLUMN "verified_at"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP COLUMN "id_document_url"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" DROP COLUMN "verification_status"`);
+        await queryRunner.query(`DROP TYPE "public"."student_profiles_verification_status_enum"`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" DROP COLUMN "address_proof_url"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_3f5eae36ca769b75f2df0e602a"`);
+        await queryRunner.query(`DROP INDEX "public"."IDX_664d16e6090d860740f7142a10"`);
+        await queryRunner.query(`DROP TABLE "tutor_subjects"`);
+        await queryRunner.query(`DROP TABLE "resource_purchases"`);
+        await queryRunner.query(`DROP TABLE "resources"`);
+        await queryRunner.query(`DROP TYPE "public"."resources_status_enum"`);
+        await queryRunner.query(`DROP TABLE "resource_reviews"`);
+        await queryRunner.query(`DROP TABLE "categories"`);
+        await queryRunner.query(`DROP TABLE "availability"`);
+        await queryRunner.query(`DROP TABLE "bookings"`);
+        await queryRunner.query(`DROP TYPE "public"."bookings_status_enum"`);
+        await queryRunner.query(`DROP TABLE "subjects"`);
+        await queryRunner.query(`DROP TYPE "public"."subjects_level_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."subjects_category_enum"`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD CONSTRAINT "FK_student_profiles_parent" FOREIGN KEY ("parent_id") REFERENCES "parent_profiles"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "student_profiles" ADD CONSTRAINT "FK_student_profiles_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "parent_profiles" ADD CONSTRAINT "FK_parent_profiles_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "tutor_profiles" ADD CONSTRAINT "FK_tutor_profiles_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+    }
+
+}
