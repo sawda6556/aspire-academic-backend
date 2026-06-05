@@ -16,6 +16,12 @@ export class ResourcePurchase {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price_at_purchase: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  platform_fee: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  tutor_revenue: number;
+
   @Column({ nullable: true })
   stripe_payment_id: string;
 

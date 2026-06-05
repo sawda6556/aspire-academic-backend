@@ -7,6 +7,7 @@ import { Category } from './entities/category.entity';
 import { ResourcePurchase } from './entities/resource-purchase.entity';
 import { ResourceReview } from './entities/resource-review.entity';
 import { TutorProfile } from '../tutor-profiles/entities/tutor-profile.entity';
+import { StripeModule } from '../integrations/stripe/stripe.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TutorProfile } from '../tutor-profiles/entities/tutor-profile.entity';
       ResourceReview,
       TutorProfile,
     ]),
+    StripeModule,
   ],
   controllers: [ResourcesController],
   providers: [ResourcesService],

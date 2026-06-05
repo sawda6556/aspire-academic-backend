@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { ResourcesService } from './resources.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -9,6 +9,9 @@ import { TutorProfile } from '../tutor-profiles/entities/tutor-profile.entity';
 import { Repository } from 'typeorm';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @Controller('resources')
 export class ResourcesController {
@@ -61,6 +64,44 @@ export class ResourcesController {
       throw new ForbiddenException('Tutor profile not found');
     }
     return this.resourcesService.create(tutorProfile.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserType.TUTOR)
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/resources',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(pdf|doc|docx|zip|jpg|jpeg|png)$/)) {
+          return cb(new BadRequestException('Invalid file type!'), false);
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 50 * 1024 * 1024, // 50MB
+      },
+    }),
+  )
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    return {
+      url: `/uploads/resources/${file.filename}`,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

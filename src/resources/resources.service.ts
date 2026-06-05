@@ -8,6 +8,7 @@ import { ResourceReview } from './entities/resource-review.entity';
 import { ResourceStatus } from '../common/enums';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
+import { StripeService } from '../integrations/stripe/stripe.service';
 
 @Injectable()
 export class ResourcesService {
@@ -20,6 +21,7 @@ export class ResourcesService {
     private readonly purchaseRepository: Repository<ResourcePurchase>,
     @InjectRepository(ResourceReview)
     private readonly reviewRepository: Repository<ResourceReview>,
+    private readonly stripeService: StripeService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -101,18 +103,33 @@ export class ResourcesService {
       throw new BadRequestException('You already own this resource');
     }
 
-    // Mock Stripe Payment
-    console.log(`Processing payment for resource ${resourceId} by user ${userId} using ${paymentMethodId}`);
-    const stripePaymentId = `ch_${Math.random().toString(36).substring(7)}`;
+    const price = Number(resource.price);
+    const platformFee = price * 0.15;
+    const tutorRevenue = price - platformFee;
+
+    // Real or Mock Stripe Session (StripeService handles LAUNCH_MODE)
+    const session = await this.stripeService.createCheckoutSession(
+      price,
+      'usd',
+      `${process.env.FRONTEND_URL}/store/success?id=${resourceId}`,
+      `${process.env.FRONTEND_URL}/store/${resourceId}`,
+    );
 
     const purchase = this.purchaseRepository.create({
       user_id: userId,
       resource_id: resourceId,
-      price_at_purchase: resource.price,
-      stripe_payment_id: stripePaymentId,
+      price_at_purchase: price,
+      platform_fee: platformFee,
+      tutor_revenue: tutorRevenue,
+      stripe_payment_id: session.id,
     });
 
-    return await this.purchaseRepository.save(purchase);
+    await this.purchaseRepository.save(purchase);
+    
+    return {
+      purchase,
+      checkoutUrl: session.url,
+    };
   }
 
   async findPurchased(userId: string) {
@@ -122,12 +139,15 @@ export class ResourcesService {
     });
     
     return purchases.map(p => {
-      // Mock Signed S3 URL
-      const signedUrl = `${p.resource.file_url}?token=mock_signed_token_${Date.now()}`;
+      // In a real production app, we would generate a temporary signed URL here.
+      // For this implementation, we ensure the path is consistent.
+      const downloadUrl = p.resource.file_url; 
+      
       return {
         ...p.resource,
-        download_url: signedUrl,
+        download_url: downloadUrl,
         purchased_at: p.created_at,
+        price_at_purchase: p.price_at_purchase,
       };
     });
   }
