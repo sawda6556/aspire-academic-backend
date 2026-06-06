@@ -51,4 +51,10 @@ export class TutorProfilesService {
       where: { verification_status: VerificationStatus.APPROVED },
     });
   }
+
+  async findAll(): Promise<TutorProfile[]> {
+    return this.tutorProfilesRepository.find({
+      relations: ['user'],
+    });
+  }
 }

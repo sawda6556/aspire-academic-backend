@@ -14,6 +14,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { TutorProfilesService } from './tutor-profiles.service';
 import { UpdateTutorProfileDto } from './dto/update-tutor-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { VerificationStatus } from '../common/enums';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -25,6 +26,12 @@ export class TutorProfilesController {
   @Get('marketplace')
   async getMarketplace() {
     return this.tutorProfilesService.findActiveTutors();
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Get()
+  async findAll() {
+    return this.tutorProfilesService.findAll();
   }
 
   @UseGuards(JwtAuthGuard)
@@ -70,7 +77,8 @@ export class TutorProfilesController {
     return this.tutorProfilesService.submitForVerification(req.user.id, idUrl, certUrl);
   }
 
-  // Admin routes (In a real app, these would be protected by an AdminGuard)
+  // Admin routes
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @Post('admin/review/:id')
   async adminReview(@Param('id') id: string, @Body('status') status: VerificationStatus) {
     return this.tutorProfilesService.adminReview(id, status);
