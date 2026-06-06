@@ -44,7 +44,15 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         return {
           type: 'postgres',
           ...(databaseUrl
-            ? { url: databaseUrl, ssl: { rejectUnauthorized: false } }
+            ? { 
+                url: databaseUrl, 
+                ssl: true,
+                extra: {
+                  ssl: {
+                    rejectUnauthorized: false,
+                  },
+                },
+              }
             : {
                 host: configService.get<string>('POSTGRES_HOST'),
                 port: configService.get<number>('POSTGRES_PORT'),
