@@ -39,19 +39,24 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        host: configService.get<string>('POSTGRES_HOST'),
-        port: configService.get<number>('POSTGRES_PORT'),
-        username: configService.get<string>('POSTGRES_USER'),
-        password: configService.get<string>('POSTGRES_PASSWORD'),
-        database: configService.get<string>('POSTGRES_DB'),
-        autoLoadEntities: true,
-        ssl: configService.get<string>('DATABASE_URL') ? { rejectUnauthorized: false } : false,
-        synchronize: false, // Use migrations for production
-        logging: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+        return {
+          type: 'postgres',
+          ...(databaseUrl
+            ? { url: databaseUrl, ssl: { rejectUnauthorized: false } }
+            : {
+                host: configService.get<string>('POSTGRES_HOST'),
+                port: configService.get<number>('POSTGRES_PORT'),
+                username: configService.get<string>('POSTGRES_USER'),
+                password: configService.get<string>('POSTGRES_PASSWORD'),
+                database: configService.get<string>('POSTGRES_DB'),
+              }),
+          autoLoadEntities: true,
+          synchronize: false, // Use migrations for production
+          logging: true,
+        };
+      },
     }),
     UsersModule,
     TutorProfilesModule,
