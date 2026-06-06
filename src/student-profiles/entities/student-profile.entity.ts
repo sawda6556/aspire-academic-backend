@@ -5,11 +5,9 @@ import {
   OneToOne,
   JoinColumn,
   ManyToOne,
-  CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { ParentProfile } from '../../parent-profiles/entities/parent-profile.entity';
-import { VerificationStatus } from '../../common/enums';
 
 @Entity('student_profiles')
 export class StudentProfile {
@@ -32,17 +30,4 @@ export class StudentProfile {
 
   @Column({ name: 'parent_id', nullable: true })
   parent_id: string;
-
-  @Column({
-    type: 'enum',
-    enum: VerificationStatus,
-    default: VerificationStatus.PENDING,
-  })
-  verification_status: VerificationStatus;
-
-  @Column({ nullable: true })
-  id_document_url: string;
-
-  @CreateDateColumn({ type: 'timestamp', nullable: true })
-  verified_at: Date;
 }

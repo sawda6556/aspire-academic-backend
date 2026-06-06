@@ -4,10 +4,8 @@ import { TutorProfilesController } from './tutor-profiles.controller';
 import { TutorProfilesService } from './tutor-profiles.service';
 import { TutorProfile } from './entities/tutor-profile.entity';
 
-import { MailModule } from '../mail/mail.module';
-
 @Module({
-  imports: [TypeOrmModule.forFeature([TutorProfile]), MailModule],
+  imports: [TypeOrmModule.forFeature([TutorProfile])],
   controllers: [TutorProfilesController],
   providers: [TutorProfilesService],
   exports: [TutorProfilesService],

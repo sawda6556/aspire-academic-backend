@@ -4,10 +4,8 @@ import { StudentProfilesController } from './student-profiles.controller';
 import { StudentProfilesService } from './student-profiles.service';
 import { StudentProfile } from './entities/student-profile.entity';
 
-import { MailModule } from '../mail/mail.module';
-
 @Module({
-  imports: [TypeOrmModule.forFeature([StudentProfile]), MailModule],
+  imports: [TypeOrmModule.forFeature([StudentProfile])],
   controllers: [StudentProfilesController],
   providers: [StudentProfilesService],
   exports: [StudentProfilesService],

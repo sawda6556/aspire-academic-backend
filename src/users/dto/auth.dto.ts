@@ -19,9 +19,6 @@ export class RegisterDto {
   full_name: string;
 
   @IsOptional()
-  profile_data?: any;
-
-  @IsOptional()
   @IsString()
   parent_id?: string; // Only for STUDENT
 }

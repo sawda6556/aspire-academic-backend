@@ -35,6 +35,22 @@ export class ResourcesService {
       query.andWhere('category.slug = :category', { category: filters.category });
     }
 
+    if (filters.grade) {
+      query.andWhere('resource.grade_level = :grade', { grade: filters.grade });
+    }
+
+    if (filters.subject) {
+      query.andWhere("resource.subjects @> :subject", { subject: JSON.stringify([filters.subject]) });
+    }
+
+    if (filters.min_price) {
+      query.andWhere('resource.price >= :min_price', { min_price: filters.min_price });
+    }
+
+    if (filters.max_price) {
+      query.andWhere('resource.price <= :max_price', { max_price: filters.max_price });
+    }
+
     if (filters.search) {
       // Sanitize search input to escape % and _
       const sanitizedSearch = filters.search.replace(/[%_]/g, '\\$&');
@@ -161,26 +177,26 @@ export class ResourcesService {
       if (!purchase) {
         throw new ForbiddenException('You must purchase the resource before reviewing it');
       }
-
+  
       const review = manager.create(ResourceReview, {
         user_id: userId,
         resource_id: resourceId,
         rating,
         comment,
       });
-
+  
       await manager.save(review);
-
+  
       // Atomic update of denormalized rating on resource
       const reviews = await manager.find(ResourceReview, { where: { resource_id: resourceId } });
       const reviewCount = reviews.length;
       const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount;
-
+  
       await manager.update(Resource, resourceId, {
         review_count: reviewCount,
         average_rating: averageRating,
       });
-
+  
       return review;
     });
   }
@@ -194,5 +210,20 @@ export class ResourcesService {
   
   async findAllCategories() {
     return await this.categoryRepository.find({ order: { name: 'ASC' } });
+  }
+
+  // Admin methods
+  async findPendingResources() {
+    return await this.resourceRepository.find({
+      where: { status: ResourceStatus.DRAFT }, // Or add a PENDING status if preferred
+      relations: ['category', 'tutor'],
+      order: { created_at: 'ASC' }
+    });
+  }
+
+  async updateStatus(id: string, status: ResourceStatus) {
+    const resource = await this.findOne(id);
+    resource.status = status;
+    return await this.resourceRepository.save(resource);
   }
 }

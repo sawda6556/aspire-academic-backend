@@ -2,8 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request, F
 import { ResourcesService } from './resources.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserType } from '../common/enums';
+import { UserType, ResourceStatus } from '../common/enums';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TutorProfile } from '../tutor-profiles/entities/tutor-profile.entity';
 import { Repository } from 'typeorm';
@@ -124,5 +125,21 @@ export class ResourcesController {
       throw new ForbiddenException('Tutor profile not found');
     }
     return this.resourcesService.findTutorResources(tutorProfile.id);
+  }
+
+  // Admin routes
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Get('admin/pending')
+  async getPendingResources() {
+    return await this.resourcesService.findPendingResources();
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Patch('admin/:id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: ResourceStatus,
+  ) {
+    return await this.resourcesService.updateStatus(id, status);
   }
 }

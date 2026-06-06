@@ -22,6 +22,7 @@ import { AvailabilityModule } from './availability/availability.module';
 import { ResourcesModule } from './resources/resources.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { StripeModule } from './integrations/stripe/stripe.module';
+import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
 import { User } from './users/entities/user.entity';
 import { TutorProfile } from './tutor-profiles/entities/tutor-profile.entity';
 import { ParentProfile } from './parent-profiles/entities/parent-profile.entity';
@@ -89,6 +90,7 @@ import { Message } from './messages/entities/message.entity';
     ResourcesModule,
     RemindersModule,
     StripeModule,
+    AdminAnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

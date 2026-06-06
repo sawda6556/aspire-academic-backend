@@ -26,11 +26,6 @@ export class UpdateTutorProfileDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  subject_ids?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
   languages?: string[];
 
   @IsOptional()

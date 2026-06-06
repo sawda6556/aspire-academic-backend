@@ -5,12 +5,9 @@ import {
   OneToOne,
   JoinColumn,
   CreateDateColumn,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { VerificationStatus, DbsStatus } from '../../common/enums';
-import { Subject } from '../../subjects/entities/subject.entity';
+import { VerificationStatus } from '../../common/enums';
 
 @Entity('tutor_profiles')
 export class TutorProfile {
@@ -56,41 +53,11 @@ export class TutorProfile {
   verification_status: VerificationStatus;
 
   @Column({ nullable: true })
-  dbs_certificate_url: string;
-
-  @Column({
-    type: 'enum',
-    enum: DbsStatus,
-    default: DbsStatus.PENDING,
-  })
-  dbs_verified_status: DbsStatus;
-
-  @Column({ nullable: true })
-  dbs_certificate_number: string;
-
-  @Column({ default: false })
-  is_on_update_service: boolean;
-
-  @Column({ type: 'timestamp', nullable: true })
-  dbs_last_checked_at: Date;
-
-  @Column()
   id_document_url: string;
 
   @Column({ nullable: true })
   cert_document_url: string;
 
-  @Column()
-  address_proof_url: string;
-
-  @CreateDateColumn({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   verified_at: Date;
-
-  @ManyToMany(() => Subject, (subject) => subject.tutors)
-  @JoinTable({
-    name: 'tutor_subjects',
-    joinColumn: { name: 'tutor_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'subject_id', referencedColumnName: 'id' },
-  })
-  subjects_v2: Subject[];
 }
