@@ -23,18 +23,6 @@ import { ResourcesModule } from './resources/resources.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { StripeModule } from './integrations/stripe/stripe.module';
 import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
-import { User } from './users/entities/user.entity';
-import { TutorProfile } from './tutor-profiles/entities/tutor-profile.entity';
-import { ParentProfile } from './parent-profiles/entities/parent-profile.entity';
-import { StudentProfile } from './student-profiles/entities/student-profile.entity';
-import { Subject } from './subjects/entities/subject.entity';
-import { Booking } from './bookings/entities/booking.entity';
-import { Availability } from './availability/entities/availability.entity';
-import { Resource } from './resources/entities/resource.entity';
-import { Category } from './resources/entities/category.entity';
-import { ResourcePurchase } from './resources/entities/resource-purchase.entity';
-import { ResourceReview } from './resources/entities/resource-review.entity';
-import { Message } from './messages/entities/message.entity';
 
 @Module({
   imports: [
@@ -52,25 +40,14 @@ import { Message } from './messages/entities/message.entity';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
         host: configService.get<string>('POSTGRES_HOST'),
         port: configService.get<number>('POSTGRES_PORT'),
         username: configService.get<string>('POSTGRES_USER'),
         password: configService.get<string>('POSTGRES_PASSWORD'),
         database: configService.get<string>('POSTGRES_DB'),
-        entities: [
-          User,
-          TutorProfile,
-          ParentProfile,
-          StudentProfile,
-          Subject,
-          Booking,
-          Availability,
-          Resource,
-          Category,
-          ResourcePurchase,
-          ResourceReview,
-          Message,
-        ],
+        autoLoadEntities: true,
+        ssl: configService.get<string>('DATABASE_URL') ? { rejectUnauthorized: false } : false,
         synchronize: false, // Use migrations for production
         logging: true,
       }),
