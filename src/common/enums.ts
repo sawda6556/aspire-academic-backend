@@ -2,6 +2,7 @@ export enum UserType {
   TUTOR = 'TUTOR',
   PARENT = 'PARENT',
   STUDENT = 'STUDENT',
+  ADMIN = 'ADMIN',
 }
 
 export enum Gender {
@@ -20,4 +21,38 @@ export enum BookingStatus {
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED',
+}
+
+export enum ResourceStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  REJECTED = 'REJECTED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum SubjectCategory {
+  ACADEMIC = 'ACADEMIC',
+  ISLAMIC = 'ISLAMIC',
+  LANGUAGES = 'LANGUAGES',
+  SKILLS = 'SKILLS',
+  PRIMARY = 'PRIMARY',
+  SECONDARY = 'SECONDARY',
+  A_LEVEL = 'A_LEVEL',
+  UNIVERSITY = 'UNIVERSITY',
+  SPECIAL_SUPPORT = 'SPECIAL_SUPPORT',
+  OTHER = 'OTHER',
+}
+
+export enum SubjectLevel {
+  GENERAL = 'GENERAL',
+  BEGINNER = 'BEGINNER',
+  INTERMEDIATE = 'INTERMEDIATE',
+  ADVANCED = 'ADVANCED',
+  PRIMARY = 'PRIMARY',
+  SECONDARY = 'SECONDARY',
+  KS1 = 'KS1',
+  KS2 = 'KS2',
+  GCSE = 'GCSE',
+  A_LEVEL = 'A_LEVEL',
+  UNIVERSITY = 'UNIVERSITY',
 }

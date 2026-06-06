@@ -5,9 +5,12 @@ import {
   OneToOne,
   JoinColumn,
   CreateDateColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { VerificationStatus } from '../../common/enums';
+import { Subject } from '../../subjects/entities/subject.entity';
 
 @Entity('tutor_profiles')
 export class TutorProfile {
@@ -60,4 +63,12 @@ export class TutorProfile {
 
   @Column({ type: 'timestamp', nullable: true })
   verified_at: Date;
+
+  @ManyToMany(() => Subject, (subject) => subject.tutors)
+  @JoinTable({
+    name: 'tutor_subjects',
+    joinColumn: { name: 'tutor_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'subject_id', referencedColumnName: 'id' },
+  })
+  subjects_v2: Subject[];
 }

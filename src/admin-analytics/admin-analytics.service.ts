@@ -5,7 +5,7 @@ import { User } from '../users/entities/user.entity';
 import { TutorProfile } from '../tutor-profiles/entities/tutor-profile.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 import { ResourcePurchase } from '../resources/entities/resource-purchase.entity';
-import { UserType, BookingStatus } from '../common/enums';
+import { UserType, BookingStatus, VerificationStatus } from '../common/enums';
 
 @Injectable()
 export class AdminAnalyticsService {
@@ -22,8 +22,8 @@ export class AdminAnalyticsService {
 
   async getOverviewStats() {
     const totalUsers = await this.userRepository.count();
-    const activeTutors = await this.tutorRepository.count({ where: { verification_status: 'APPROVED' } });
-    const pendingTutors = await this.tutorRepository.count({ where: { verification_status: 'PENDING' } });
+    const activeTutors = await this.tutorRepository.count({ where: { verification_status: VerificationStatus.APPROVED } });
+    const pendingTutors = await this.tutorRepository.count({ where: { verification_status: VerificationStatus.PENDING } });
     
     const lessonsThisMonth = await this.bookingRepository.createQueryBuilder('booking')
       .where('booking.status = :status', { status: BookingStatus.CONFIRMED })
