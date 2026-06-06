@@ -22,6 +22,7 @@ import { AvailabilityModule } from './availability/availability.module';
 import { ResourcesModule } from './resources/resources.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { StripeModule } from './integrations/stripe/stripe.module';
+import { ZoomModule } from './integrations/zoom/zoom.module';
 import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
 
 @Module({
@@ -67,6 +68,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
     ResourcesModule,
     RemindersModule,
     StripeModule,
+    ZoomModule,
     AdminAnalyticsModule,
   ],
   controllers: [AppController],
