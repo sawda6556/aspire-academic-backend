@@ -1,0 +1,12 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="60" fill="#E8ECF1"/>
+  <!-- Hijab outline -->
+  <circle cx="60" cy="50" r="30" fill="#D4B896"/>
+  <!-- Hijab fabric -->
+  <path d="M30 50C30 32 43 18 60 18C77 18 90 32 90 50C90 55 88 60 85 64L88 90H32L35 64C32 60 30 55 30 50Z" fill="#4BA3A3"/>
+  <!-- Inner face area (same color as head, showing face is blank) -->
+  <circle cx="60" cy="52" r="24" fill="#D4B896"/>
+  <!-- Body/shoulders -->
+  <path d="M32 95C32 82 44 72 60 72C76 72 88 82 88 95V105H32V95Z" fill="#5B8FB9"/>
+</svg>
