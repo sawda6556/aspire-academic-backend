@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Study materials illustration - halal-friendly -->
+  
+  <!-- Stack of books -->
+  <g transform="translate(30, 80)">
+    <!-- Book 1 (bottom) -->
+    <rect x="0" y="60" width="90" height="20" rx="3" fill="#2B4C7E"/>
+    <rect x="0" y="60" width="5" height="20" fill="#1A3A5C"/>
+    
+    <!-- Book 2 -->
+    <rect x="5" y="40" width="85" height="20" rx="3" fill="#5B8FB9"/>
+    <rect x="5" y="40" width="5" height="20" fill="#4A7A9E"/>
+    
+    <!-- Book 3 -->
+    <rect x="2" y="20" width="88" height="20" rx="3" fill="#4BA3A3" opacity="0.8"/>
+    <rect x="2" y="20" width="5" height="20" fill="#3A8A8A"/>
+  </g>
+  
+  <!-- Graduation cap -->
+  <g transform="translate(50, 25)">
+    <!-- Cap base -->
+    <polygon points="50,30 0,20 50,10 100,20" fill="#2D3748"/>
+    <!-- Cap top -->
+    <polygon points="50,10 50,0 100,20 50,30" fill="#2B4C7E"/>
+    <!-- Button -->
+    <circle cx="50" cy="10" r="5" fill="#C9A962"/>
+    <!-- Tassel -->
+    <line x1="50" y1="10" x2="90" y2="20" stroke="#C9A962" stroke-width="2"/>
+    <circle cx="90" cy="25" r="4" fill="#C9A962"/>
+  </g>
+  
+  <!-- Pencil -->
+  <g transform="translate(130, 50) rotate(45)">
+    <rect x="0" y="0" width="80" height="12" rx="1" fill="#C9A962"/>
+    <polygon points="80,0 95,6 80,12" fill="#FAFBFC"/>
+    <rect x="0" y="0" width="12" height="12" rx="1" fill="#E8A598"/>
+  </g>
+  
+  <!-- Globe -->
+  <g transform="translate(140, 110)">
+    <circle cx="30" cy="30" r="28" fill="#5B8FB9" opacity="0.3"/>
+    <ellipse cx="30" cy="30" rx="28" ry="10" fill="none" stroke="#2B4C7E" stroke-width="1.5" opacity="0.5"/>
+    <line x1="30" y1="2" x2="30" y2="58" stroke="#2B4C7E" stroke-width="1" opacity="0.4"/>
+    <path d="M5,30 Q30,15 55,30" stroke="#2B4C7E" stroke-width="1" fill="none" opacity="0.4"/>
+    <path d="M5,30 Q30,45 55,30" stroke="#2B4C7E" stroke-width="1" fill="none" opacity="0.4"/>
+    <!-- Stand -->
+    <rect x="25" y="58" width="10" height="15" fill="#6B7280"/>
+    <ellipse cx="30" cy="75" rx="20" ry="5" fill="#6B7280" opacity="0.6"/>
+  </g>
+  
+  <!-- Small open book -->
+  <g transform="translate(20, 160)">
+    <path d="M0,20 L25,10 L25,35 L0,45 Z" fill="#FAFBFC" stroke="#5B8FB9" stroke-width="1"/>
+    <path d="M25,10 L50,20 L50,45 L25,35 Z" fill="#FAFBFC" stroke="#5B8FB9" stroke-width="1"/>
+    <line x1="10" y1="18" x2="20" y2="14" stroke="#E8ECF1" stroke-width="1"/>
+    <line x1="10" y1="25" x2="20" y2="21" stroke="#E8ECF1" stroke-width="1"/>
+    <line x1="30" y1="14" x2="40" y2="18" stroke="#E8ECF1" stroke-width="1"/>
+    <line x1="30" y1="21" x2="40" y2="25" stroke="#E8ECF1" stroke-width="1"/>
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="170" cy="50" r="15" fill="#C9A962" opacity="0.2"/>
+  <circle cx="10" cy="120" r="10" fill="#5B8FB9" opacity="0.15"/>
+</svg>

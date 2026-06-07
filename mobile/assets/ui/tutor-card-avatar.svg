@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <!-- Tutor Card Avatar -->
+  <defs>
+    <clipPath id="avatarClip80">
+      <circle cx="40" cy="40" r="38"/>
+    </clipPath>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="40" cy="40" r="38" fill="#E8ECF1"/>
+  
+  <!-- Hijab (female avatar for this example) -->
+  <g clip-path="url(#avatarClip80)">
+    <!-- Hijab outer -->
+    <path d="M12 25 Q12 5 40 3 Q68 5 68 25 L68 55 Q68 70 40 75 Q12 70 12 55 Z" fill="#2B4C7E"/>
+    <!-- Face -->
+    <ellipse cx="40" cy="38" rx="18" ry="22" fill="#FAFBFC"/>
+    <!-- Body/shoulders -->
+    <ellipse cx="40" cy="75" rx="26" ry="15" fill="#2B4C7E"/>
+    <!-- Hijab fold -->
+    <path d="M22 55 Q40 62 58 55" stroke="#5B8FB9" stroke-width="1.5" fill="none"/>
+  </g>
+</svg>

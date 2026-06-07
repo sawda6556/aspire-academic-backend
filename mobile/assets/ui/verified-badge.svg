@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 32" width="80" height="32">
+  <!-- Verified Badge - Pill Shape -->
+  <rect x="0" y="0" width="80" height="32" rx="16" fill="#C9A962"/>
+  
+  <!-- Checkmark Icon -->
+  <path d="M20 16 L27 23 L36 11" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Text -->
+  <text x="46" y="21" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="white">Verified</text>
+</svg>
