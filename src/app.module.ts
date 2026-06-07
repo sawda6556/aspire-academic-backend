@@ -41,6 +41,15 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
+        const launchMode = configService.get<string>('LAUNCH_MODE', 'development');
+        
+        console.log(`Database configuration: mode=${launchMode}, hasDatabaseUrl=${!!databaseUrl}`);
+        if (databaseUrl) {
+          console.log(`Using DATABASE_URL (starts with: ${databaseUrl.substring(0, 20)}...)`);
+        } else {
+          console.log(`Using individual parameters: host=${configService.get('POSTGRES_HOST')}, db=${configService.get('POSTGRES_DB')}`);
+        }
+
         return {
           type: 'postgres',
           ...(databaseUrl
@@ -62,7 +71,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
-          logging: true,
+          logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
         };
       },
     }),
