@@ -48,6 +48,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         
         // Remote databases (like Railway managed Postgres) usually require SSL
         const useSsl = !!databaseUrl || launchMode === 'production' || nodeEnv === 'production';
+        console.log(`Using SSL: ${useSsl}`);
 
         return {
           type: 'postgres',
@@ -67,6 +68,12 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
           logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
+          // Add a small delay/retry or just log that we are attempting connection
+          extra: {
+            max: 20,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
+          }
         };
       },
     }),
