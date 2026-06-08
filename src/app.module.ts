@@ -42,23 +42,19 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
       useFactory: (configService: ConfigService) => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
         const launchMode = configService.get<string>('LAUNCH_MODE', 'development');
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
         
-        console.log(`Database configuration: mode=${launchMode}, hasDatabaseUrl=${!!databaseUrl}`);
+        console.log(`Database configuration: mode=${launchMode}, env=${nodeEnv}, hasDatabaseUrl=${!!databaseUrl}`);
         
-        if (databaseUrl) {
-          console.log(`Using DATABASE_URL (starts with: ${databaseUrl.substring(0, 20)}...)`);
-        } else {
-          console.log(`Using individual parameters: host=${configService.get('POSTGRES_HOST')}, db=${configService.get('POSTGRES_DB')}`);
-        }
-        
-        const isProduction = launchMode === 'production';
+        // Remote databases (like Railway managed Postgres) usually require SSL
+        const useSsl = !!databaseUrl || launchMode === 'production' || nodeEnv === 'production';
 
         return {
           type: 'postgres',
           ...(databaseUrl
             ? { 
                 url: databaseUrl, 
-                ssl: isProduction ? { rejectUnauthorized: false } : false,
+                ssl: useSsl ? { rejectUnauthorized: false } : false,
               }
             : {
                 host: configService.get<string>('POSTGRES_HOST'),
@@ -66,7 +62,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
                 username: configService.get<string>('POSTGRES_USER'),
                 password: configService.get<string>('POSTGRES_PASSWORD'),
                 database: configService.get<string>('POSTGRES_DB'),
-                ssl: isProduction ? { rejectUnauthorized: false } : false,
+                ssl: useSsl ? { rejectUnauthorized: false } : false,
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
