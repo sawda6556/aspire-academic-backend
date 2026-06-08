@@ -44,30 +44,29 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         const launchMode = configService.get<string>('LAUNCH_MODE', 'development');
         
         console.log(`Database configuration: mode=${launchMode}, hasDatabaseUrl=${!!databaseUrl}`);
+        
         if (databaseUrl) {
           console.log(`Using DATABASE_URL (starts with: ${databaseUrl.substring(0, 20)}...)`);
         } else {
           console.log(`Using individual parameters: host=${configService.get('POSTGRES_HOST')}, db=${configService.get('POSTGRES_DB')}`);
         }
+        
+        const isProduction = launchMode === 'production';
 
         return {
           type: 'postgres',
           ...(databaseUrl
             ? { 
                 url: databaseUrl, 
-                ssl: true,
-                extra: {
-                  ssl: {
-                    rejectUnauthorized: false,
-                  },
-                },
+                ssl: isProduction ? { rejectUnauthorized: false } : false,
               }
             : {
                 host: configService.get<string>('POSTGRES_HOST'),
-                port: configService.get<number>('POSTGRES_PORT'),
+                port: configService.get<number>('POSTGRES_PORT', 5432),
                 username: configService.get<string>('POSTGRES_USER'),
                 password: configService.get<string>('POSTGRES_PASSWORD'),
                 database: configService.get<string>('POSTGRES_DB'),
+                ssl: isProduction ? { rejectUnauthorized: false } : false,
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
