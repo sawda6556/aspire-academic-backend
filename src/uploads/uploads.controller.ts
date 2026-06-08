@@ -28,8 +28,9 @@ export class UploadsController {
         },
       }),
       fileFilter: (req, file, cb) => {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|pdf)$/)) {
-          return cb(new BadRequestException('Only image and PDF files are allowed!'), false);
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/pdf', 'application/pdf'];
+        if (!allowedMimeTypes.includes(file.mimetype) || !file.originalname.match(/\.(jpg|jpeg|png|pdf)$/)) {
+          return cb(new BadRequestException('Only image (JPG, PNG) and PDF files are allowed!'), false);
         }
         cb(null, true);
       },
