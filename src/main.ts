@@ -1,6 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import * as crypto from 'crypto';
+
+// Polyfill for Node.js < 19 where crypto.randomUUID is not global
+if (!global.crypto) {
+  (global as any).crypto = crypto;
+}
 
 async function bootstrap() {
   console.log('Starting application bootstrap...');
