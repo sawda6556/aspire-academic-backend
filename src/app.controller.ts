@@ -12,13 +12,23 @@ export class AppController {
 
   @Get('health')
   getHealth() {
+    let bootstrapLogs = '';
+    try {
+      if (require('fs').existsSync('/tmp/bootstrap.log')) {
+        bootstrapLogs = require('fs').readFileSync('/tmp/bootstrap.log', 'utf8');
+      }
+    } catch (e) {
+      bootstrapLogs = 'Error reading logs: ' + e.message;
+    }
+
     return { 
       status: 'ok', 
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       envKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')),
-      hasDbUrl: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL)
+      hasDbUrl: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL),
+      bootstrapLogs
     };
   }
 }
