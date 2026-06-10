@@ -17,11 +17,11 @@ export default new DataSource({
   ...(databaseUrl
     ? { url: databaseUrl, ssl: useSsl ? { rejectUnauthorized: false } : false }
     : {
-        host: process.env.POSTGRES_HOST,
-        port: parseInt(process.env.POSTGRES_PORT || '5432'),
-        username: process.env.POSTGRES_USER,
-        password: process.env.POSTGRES_PASSWORD,
-        database: process.env.POSTGRES_DB,
+        host: process.env.PGHOST || process.env.POSTGRES_HOST,
+        port: parseInt(process.env.PGPORT || process.env.POSTGRES_PORT || '5432'),
+        username: process.env.PGUSER || process.env.POSTGRES_USER,
+        password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD,
+        database: process.env.PGDATABASE || process.env.POSTGRES_DB,
         ssl: useSsl ? { rejectUnauthorized: false } : false,
       }),
   entities: [nodeEnv === 'production' ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
