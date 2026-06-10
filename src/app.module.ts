@@ -42,6 +42,8 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
       useFactory: (configService: ConfigService) => {
         const databaseUrl = process.env.DATABASE_URL || 
                             process.env.POSTGRES_URL || 
+                            process.env.DATABASE_PRIVATE_URL ||
+                            process.env.POSTGRES_PRIVATE_URL ||
                             configService.get<string>('DATABASE_URL');
                             
         const launchMode = process.env.LAUNCH_MODE || configService.get<string>('LAUNCH_MODE', 'development');
@@ -49,7 +51,10 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         
         console.log('--- DATABASE CONNECTION DEBUG ---');
         console.log(`- DATABASE_URL in process.env: ${!!process.env.DATABASE_URL}`);
+        console.log(`- POSTGRES_URL in process.env: ${!!process.env.POSTGRES_URL}`);
+        console.log(`- DATABASE_PRIVATE_URL in process.env: ${!!process.env.DATABASE_PRIVATE_URL}`);
         console.log(`- DATABASE_URL in configService: ${!!configService.get('DATABASE_URL')}`);
+        console.log(`- PGHOST in process.env: ${!!process.env.PGHOST}`);
         console.log(`- Final databaseUrl determined: ${!!databaseUrl}`);
         console.log(`- Mode: ${launchMode}, NodeEnv: ${nodeEnv}`);
         console.log('---------------------------------');
@@ -66,20 +71,22 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
                 ssl: useSsl ? { rejectUnauthorized: false } : false,
               }
             : {
-                host: configService.get<string>('POSTGRES_HOST'),
-                port: configService.get<number>('POSTGRES_PORT', 5432),
-                username: configService.get<string>('POSTGRES_USER'),
-                password: configService.get<string>('POSTGRES_PASSWORD'),
-                database: configService.get<string>('POSTGRES_DB'),
+                host: process.env.PGHOST || process.env.POSTGRES_HOST || configService.get<string>('POSTGRES_HOST') || 'localhost',
+                port: parseInt(process.env.PGPORT || process.env.POSTGRES_PORT || configService.get<string>('POSTGRES_PORT') || '5432', 10),
+                username: process.env.PGUSER || process.env.POSTGRES_USER || configService.get<string>('POSTGRES_USER') || 'postgres',
+                password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || configService.get<string>('POSTGRES_PASSWORD') || 'postgres',
+                database: process.env.PGDATABASE || process.env.POSTGRES_DB || configService.get<string>('POSTGRES_DB') || 'postgres',
                 ssl: useSsl ? { rejectUnauthorized: false } : false,
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
+          retryAttempts: 3, // Reduce from default 10 to fail faster if misconfigured
+          retryDelay: 3000,
           logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
           extra: {
             max: 20,
             idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 2000,
+            connectionTimeoutMillis: 5000,
           }
         };
       },
