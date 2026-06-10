@@ -40,27 +40,35 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const databaseUrl = process.env.DATABASE_URL || 
-                            process.env.POSTGRES_URL || 
-                            process.env.DATABASE_PRIVATE_URL ||
-                            process.env.POSTGRES_PRIVATE_URL ||
-                            configService.get<string>('DATABASE_URL');
-                            
         const launchMode = process.env.LAUNCH_MODE || configService.get<string>('LAUNCH_MODE', 'development');
         const nodeEnv = process.env.NODE_ENV || configService.get<string>('NODE_ENV', 'development');
+        const isProduction = launchMode === 'production' || nodeEnv === 'production';
+
+        // --- DATABASE CONNECTION DEBUG ---
+        const dbUrlKeys = ['DATABASE_URL', 'POSTGRES_URL', 'DATABASE_PRIVATE_URL', 'POSTGRES_PRIVATE_URL', 'RAILWAY_POSTGRES_URL', 'URL'];
+        const foundEnvKeys = Object.keys(process.env).filter(k => dbUrlKeys.includes(k) || k.includes('POSTGRES') || k.startsWith('PG'));
+        console.log(`[Bootstrap] Available DB env keys: ${foundEnvKeys.join(', ')}`);
+
+        // Prioritize direct process.env for Railway environment injection stability
+        const databaseUrl = process.env.DATABASE_URL || 
+                           process.env.POSTGRES_URL || 
+                           process.env.DATABASE_PRIVATE_URL ||
+                           process.env.POSTGRES_PRIVATE_URL ||
+                           process.env.RAILWAY_POSTGRES_URL || 
+                           configService.get<string>('DATABASE_URL');
+
+        if (databaseUrl) {
+          const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
+          console.log(`[Bootstrap] Determined Database URL: ${sanitizedUrl}`);
+        } else if (isProduction) {
+          console.error('[Bootstrap] FATAL: No database connection string found in production!');
+          throw new Error('FATAL: No database connection string found in production environment variables (DATABASE_URL, POSTGRES_URL, etc.)');
+        }
         
-        console.log('--- DATABASE CONNECTION DEBUG ---');
-        console.log(`- DATABASE_URL in process.env: ${!!process.env.DATABASE_URL}`);
-        console.log(`- POSTGRES_URL in process.env: ${!!process.env.POSTGRES_URL}`);
-        console.log(`- DATABASE_PRIVATE_URL in process.env: ${!!process.env.DATABASE_PRIVATE_URL}`);
-        console.log(`- DATABASE_URL in configService: ${!!configService.get('DATABASE_URL')}`);
-        console.log(`- PGHOST in process.env: ${!!process.env.PGHOST}`);
-        console.log(`- Final databaseUrl determined: ${!!databaseUrl}`);
-        console.log(`- Mode: ${launchMode}, NodeEnv: ${nodeEnv}`);
-        console.log('---------------------------------');
+        console.log(`Database configuration: mode=${launchMode}, env=${nodeEnv}, hasDatabaseUrl=${!!databaseUrl}`);
         
         // Remote databases (like Railway managed Postgres) usually require SSL
-        const useSsl = !!databaseUrl || launchMode === 'production' || nodeEnv === 'production';
+        const useSsl = !!databaseUrl || isProduction;
         console.log(`Using SSL: ${useSsl}`);
 
         return {
@@ -71,11 +79,11 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
                 ssl: useSsl ? { rejectUnauthorized: false } : false,
               }
             : {
-                host: process.env.PGHOST || process.env.POSTGRES_HOST || configService.get<string>('POSTGRES_HOST') || 'localhost',
+                host: process.env.PGHOST || process.env.POSTGRES_HOST || configService.get<string>('POSTGRES_HOST'),
                 port: parseInt(process.env.PGPORT || process.env.POSTGRES_PORT || configService.get<string>('POSTGRES_PORT') || '5432', 10),
-                username: process.env.PGUSER || process.env.POSTGRES_USER || configService.get<string>('POSTGRES_USER') || 'postgres',
-                password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || configService.get<string>('POSTGRES_PASSWORD') || 'postgres',
-                database: process.env.PGDATABASE || process.env.POSTGRES_DB || configService.get<string>('POSTGRES_DB') || 'postgres',
+                username: process.env.PGUSER || process.env.POSTGRES_USER || configService.get<string>('POSTGRES_USER'),
+                password: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || configService.get<string>('POSTGRES_PASSWORD'),
+                database: process.env.PGDATABASE || process.env.POSTGRES_DB || configService.get<string>('POSTGRES_DB'),
                 ssl: useSsl ? { rejectUnauthorized: false } : false,
               }),
           autoLoadEntities: true,
