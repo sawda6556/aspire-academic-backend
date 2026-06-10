@@ -19,6 +19,7 @@ function log(message: string) {
 
 async function bootstrap() {
   log('Starting application bootstrap...');
+  log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
   try {
     const app = await NestFactory.create(AppModule);
     log('App instance created');
