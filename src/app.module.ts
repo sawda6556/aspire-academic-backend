@@ -40,11 +40,19 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const databaseUrl = configService.get<string>('DATABASE_URL');
-        const launchMode = configService.get<string>('LAUNCH_MODE', 'development');
-        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        const databaseUrl = process.env.DATABASE_URL || 
+                            process.env.POSTGRES_URL || 
+                            configService.get<string>('DATABASE_URL');
+                            
+        const launchMode = process.env.LAUNCH_MODE || configService.get<string>('LAUNCH_MODE', 'development');
+        const nodeEnv = process.env.NODE_ENV || configService.get<string>('NODE_ENV', 'development');
         
-        console.log(`Database configuration: mode=${launchMode}, env=${nodeEnv}, hasDatabaseUrl=${!!databaseUrl}`);
+        console.log('--- DATABASE CONNECTION DEBUG ---');
+        console.log(`- DATABASE_URL in process.env: ${!!process.env.DATABASE_URL}`);
+        console.log(`- DATABASE_URL in configService: ${!!configService.get('DATABASE_URL')}`);
+        console.log(`- Final databaseUrl determined: ${!!databaseUrl}`);
+        console.log(`- Mode: ${launchMode}, NodeEnv: ${nodeEnv}`);
+        console.log('---------------------------------');
         
         // Remote databases (like Railway managed Postgres) usually require SSL
         const useSsl = !!databaseUrl || launchMode === 'production' || nodeEnv === 'production';
@@ -68,7 +76,6 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
           logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
-          // Add a small delay/retry or just log that we are attempting connection
           extra: {
             max: 20,
             idleTimeoutMillis: 30000,

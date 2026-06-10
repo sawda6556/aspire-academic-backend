@@ -6,8 +6,8 @@
   "deploy": {
     "startCommand": "npm run start:prod",
     "restartPolicyType": "ON_FAILURE",
-    "healthCheckPath": "/",
-    "healthCheckTimeout": 100,
-    "serviceName": "backend"
+    "healthCheckPath": "/health",
+    "healthCheckTimeout": 300,
+    "serviceName": "aspire-academic-backend-production"
   }
 }
