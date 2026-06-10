@@ -12,6 +12,13 @@ export class AppController {
 
   @Get('health')
   getHealth() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      envKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')),
+      hasDbUrl: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL)
+    };
   }
 }
