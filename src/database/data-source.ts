@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.RAILWAY_POSTGRES_URL;
+const databaseUrl = process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.RAILWAY_POSTGRES_URL;
 const nodeEnv = process.env.NODE_ENV || 'development';
 
 if (nodeEnv === 'production' && !databaseUrl && !process.env.POSTGRES_HOST) {
