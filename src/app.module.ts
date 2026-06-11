@@ -50,7 +50,8 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         console.log(`[Bootstrap] Available DB env keys: ${foundEnvKeys.join(', ')}`);
 
         // Prioritize direct process.env for Railway environment injection stability
-        const databaseUrl = process.env.DATABASE_URL || 
+        const databaseUrl = process.env.RAILWAY_DATABASE_URL ||
+                           process.env.DATABASE_URL || 
                            process.env.POSTGRES_URL || 
                            process.env.DATABASE_PRIVATE_URL ||
                            process.env.POSTGRES_PRIVATE_URL ||
@@ -60,6 +61,18 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         if (databaseUrl) {
           const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
           console.log(`[Bootstrap] Determined Database URL: ${sanitizedUrl}`);
+          
+          try {
+            const urlMatch = databaseUrl.match(/@([^:/]+):?(\d+)?\/([^?]+)/);
+            if (urlMatch) {
+              const [_, host, port, dbName] = urlMatch;
+              console.log(`[Bootstrap] DB Components: host=${host}, port=${port || '5432'}, db=${dbName}`);
+            } else {
+              console.log(`[Bootstrap] DB URL components could not be parsed via regex`);
+            }
+          } catch (e) {
+            console.log(`[Bootstrap] Error parsing DB URL components: ${e.message}`);
+          }
         } else if (isProduction) {
           console.error('[Bootstrap] FATAL: No database connection string found in production!');
           throw new Error('FATAL: No database connection string found in production environment variables (DATABASE_URL, POSTGRES_URL, etc.)');
