@@ -60,18 +60,18 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
 
         if (databaseUrl) {
           const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
-          console.log(`[Bootstrap] Determined Database URL: ${sanitizedUrl}`);
+          console.log(`PROBE: [AppModule] Determined Database URL: ${sanitizedUrl}`);
           
           try {
             const urlMatch = databaseUrl.match(/@([^:/]+):?(\d+)?\/([^?]+)/);
             if (urlMatch) {
               const [_, host, port, dbName] = urlMatch;
-              console.log(`[Bootstrap] DB Components: host=${host}, port=${port || '5432'}, db=${dbName}`);
+              console.log(`PROBE: [AppModule] DB Components: host=${host}, port=${port || '5432'}, db=${dbName}`);
             } else {
-              console.log(`[Bootstrap] DB URL components could not be parsed via regex`);
+              console.log(`PROBE: [AppModule] DB URL components could not be parsed via regex`);
             }
           } catch (e) {
-            console.log(`[Bootstrap] Error parsing DB URL components: ${e.message}`);
+            console.log(`PROBE: [AppModule] Error parsing DB URL components: ${e.message}`);
           }
         } else if (isProduction) {
           console.error('[Bootstrap] FATAL: No database connection string found in production!');

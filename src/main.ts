@@ -1,3 +1,4 @@
+console.log('PROBE: Starting process');
 console.log('--- GLOBAL BOOTSTRAP START ---');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
@@ -19,6 +20,23 @@ function log(message: string) {
 
 async function bootstrap() {
   log('Starting application bootstrap...');
+  
+  // Masked DB URL Probe
+  const dbUrl = process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (dbUrl) {
+    const masked = dbUrl.replace(/:([^:@/]+)@/, ':****@');
+    log(`PROBE: Masked DATABASE_URL detected: ${masked}`);
+    try {
+      const urlMatch = dbUrl.match(/@([^:/]+):?(\d+)?\/([^?]+)/);
+      if (urlMatch) {
+        const [_, host, port, dbName] = urlMatch;
+        log(`PROBE: DB Components: host=${host}, port=${port || '5432'}, db=${dbName}`);
+      }
+    } catch (e) {}
+  } else {
+    log('PROBE: No DATABASE_URL or equivalent found in process.env');
+  }
+
   log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
   try {
     const app = await NestFactory.create(AppModule);
