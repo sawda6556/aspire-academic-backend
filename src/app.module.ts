@@ -64,7 +64,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
 
         let useFallback = true; // FORCE FOR TROUBLESHOOTING
 
-        if (databaseUrl) {
+        if (databaseUrl && !useFallback) {
           const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
           console.log(`PROBE: [AppModule] Determined Database URL: ${sanitizedUrl}`);
           
@@ -90,6 +90,8 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               useFallback = true;
             }
           }
+        } else if (databaseUrl && useFallback) {
+          console.log('PROBE: [AppModule] Database URL found but forcing Fallback (SQLite). Skipping probe.');
         } else {
           console.log('PROBE: [AppModule] No databaseUrl found.');
           if (isProduction && !allowDegraded) {
