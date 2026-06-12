@@ -36,16 +36,16 @@ async function bootstrap() {
   
   let app;
   try {
+    log('Attempting NestFactory.create(AppModule)...');
     app = await NestFactory.create(AppModule);
     log('App instance created successfully');
   } catch (error) {
     log(`CRITICAL: Error during NestFactory.create: ${error.message}`);
+    log(`ERROR STACK: ${error.stack}`);
+    
     if (allowDegraded) {
-      log('DEGRADED MODE: Attempting to start with minimal configuration is not possible via create(AppModule) if it failed. CHECK THE DB CONFIG.');
-      // Actually, my AppModule changes should prevent it from throwing if !databaseUrl
-      // But if it throws due to CONNECTION error, we get here.
+      log('DEGRADED MODE: Primary AppModule failed. This should not happen with our fallback logic in AppModule. Investigate synchronous initialization errors.');
     }
-    log(error.stack);
     process.exit(1);
   }
 

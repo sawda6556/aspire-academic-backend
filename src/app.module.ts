@@ -40,15 +40,18 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
+        console.log('[AppModule] useFactory START');
         const launchMode = process.env.LAUNCH_MODE || configService.get<string>('LAUNCH_MODE', 'development');
         const nodeEnv = process.env.NODE_ENV || configService.get<string>('NODE_ENV', 'development');
         const isProduction = launchMode === 'production' || nodeEnv === 'production';
         const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
 
+        console.log(`[AppModule] allowDegraded=${allowDegraded}, isProduction=${isProduction}`);
+
         // --- DATABASE CONNECTION DEBUG ---
         const dbUrlKeys = ['DATABASE_URL', 'POSTGRES_URL', 'DATABASE_PRIVATE_URL', 'POSTGRES_PRIVATE_URL', 'RAILWAY_POSTGRES_URL', 'URL'];
         const foundEnvKeys = Object.keys(process.env).filter(k => dbUrlKeys.includes(k) || k.includes('POSTGRES') || k.startsWith('PG'));
-        console.log(`[Bootstrap] Available DB env keys: ${foundEnvKeys.join(', ')}`);
+        console.log(`[AppModule] Available DB env keys: ${foundEnvKeys.join(', ')}`);
 
         // Prioritize direct process.env for Railway environment injection stability
         const databaseUrl = process.env.RAILWAY_DATABASE_URL ||
@@ -68,14 +71,17 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
           if (allowDegraded) {
             console.log('PROBE: [AppModule] Testing database connection for Degraded Mode fallback...');
             try {
-              // Use pg directly to probe the connection before letting TypeORM take over
+              console.log('PROBE: [AppModule] Requiring pg...');
               const { Client } = require('pg');
+              console.log('PROBE: [AppModule] Creating pg client...');
               const client = new Client({ 
                 connectionString: databaseUrl,
                 ssl: { rejectUnauthorized: false },
                 connectionTimeoutMillis: 5000 
               });
+              console.log('PROBE: [AppModule] Connecting to pg...');
               await client.connect();
+              console.log('PROBE: [AppModule] Closing pg connection...');
               await client.end();
               console.log('PROBE: [AppModule] Database connection successful.');
             } catch (e) {
@@ -84,14 +90,18 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               useFallback = true;
             }
           }
-        } else if (isProduction && !allowDegraded) {
-          console.error('[Bootstrap] FATAL: No database connection string found in production!');
-          throw new Error('FATAL: No database connection string found in production environment variables (DATABASE_URL, POSTGRES_URL, etc.)');
+        } else {
+          console.log('PROBE: [AppModule] No databaseUrl found.');
+          if (isProduction && !allowDegraded) {
+            console.error('[Bootstrap] FATAL: No database connection string found in production!');
+            throw new Error('FATAL: No database connection string found in production environment variables (DATABASE_URL, POSTGRES_URL, etc.)');
+          }
         }
         
         console.log(`Database configuration: mode=${launchMode}, env=${nodeEnv}, hasDatabaseUrl=${!!databaseUrl}, useFallback=${useFallback}`);
         
         if (useFallback) {
+          console.log('[AppModule] Returning SQLite config');
           return {
             type: 'sqlite',
             database: ':memory:',
@@ -101,6 +111,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
           };
         }
 
+        console.log('[AppModule] Returning Postgres config');
         // Remote databases (like Railway managed Postgres) usually require SSL
         const useSsl = !!databaseUrl || isProduction;
         
