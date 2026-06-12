@@ -21,27 +21,35 @@ function log(message: string) {
 async function bootstrap() {
   log('Starting application bootstrap...');
   
+  const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+
   // Masked DB URL Probe
   const dbUrl = process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (dbUrl) {
     const masked = dbUrl.replace(/:([^:@/]+)@/, ':****@');
     log(`PROBE: Masked DATABASE_URL detected: ${masked}`);
-    try {
-      const urlMatch = dbUrl.match(/@([^:/]+):?(\d+)?\/([^?]+)/);
-      if (urlMatch) {
-        const [_, host, port, dbName] = urlMatch;
-        log(`PROBE: DB Components: host=${host}, port=${port || '5432'}, db=${dbName}`);
-      }
-    } catch (e) {}
   } else {
     log('PROBE: No DATABASE_URL or equivalent found in process.env');
   }
 
   log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
+  
+  let app;
   try {
-    const app = await NestFactory.create(AppModule);
-    log('App instance created');
-    
+    app = await NestFactory.create(AppModule);
+    log('App instance created successfully');
+  } catch (error) {
+    log(`CRITICAL: Error during NestFactory.create: ${error.message}`);
+    if (allowDegraded) {
+      log('DEGRADED MODE: Attempting to start with minimal configuration is not possible via create(AppModule) if it failed. CHECK THE DB CONFIG.');
+      // Actually, my AppModule changes should prevent it from throwing if !databaseUrl
+      // But if it throws due to CONNECTION error, we get here.
+    }
+    log(error.stack);
+    process.exit(1);
+  }
+
+  try {
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -53,19 +61,17 @@ async function bootstrap() {
     const port = process.env.PORT;
     if (!port) {
       log('CRITICAL: PORT environment variable is not set! Railway requires this to route traffic.');
-      // In production, we MUST have the PORT from Railway.
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' && !allowDegraded) {
         throw new Error('Missing PORT environment variable in production');
       }
     }
     const finalPort = port ? parseInt(port, 10) : 3000;
     log(`Attempting to listen on port: ${finalPort} (from env.PORT: ${port})`);
-    log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
     
     await app.listen(finalPort, '0.0.0.0');
     log(`Application is successfully running on: http://0.0.0.0:${finalPort}`);
   } catch (error) {
-    log(`Error during application bootstrap: ${error.message}`);
+    log(`Error during application startup: ${error.message}`);
     log(error.stack);
     process.exit(1);
   }

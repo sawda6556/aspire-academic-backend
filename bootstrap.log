@@ -1,0 +1,36 @@
+--- GLOBAL BOOTSTRAP START ---
+Starting application bootstrap...
+Environment Variable Keys: PORT, DATABASE_URL, NODE_ENV, SHELL, NVM_INC, SUDO_GID, IMAGE_UPLOAD_PRESIGN_URL, NODE_OPTIONS, SUDO_COMMAND, SUDO_USER, PWD, LOGNAME, HOME, LANG, LS_COLORS, TEAM_DB_PATH, PLAYWRIGHT_BROWSERS_PATH, TEAM_DB_EVENTS_URL, NVM_DIR, LESSCLOSE, TERM, LESSOPEN, USER, SHLVL, NVM_CD_FLAGS, TEAM_DB_URL, PS1, BUN_INSTALL, LC_ALL, PATH, SUDO_UID, NVM_BIN, MAIL, OLDPWD, _
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +39ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJwtModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mParentProfilesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mStudentProfilesModule dependencies initialized[39m[38;5;3m +0ms[39m
+[Bootstrap] Available DB env keys: DATABASE_URL
+[Bootstrap] Determined Database URL: postgres://user:****@localhost:5432/db
+[Bootstrap] DB Components: host=localhost, port=5432, db=db
+Database configuration: mode=development, env=production, hasDatabaseUrl=true
+Using SSL: true
+[STRIPE] Mock mode: No API key found
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +3ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mServeStaticModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mEventEmitterModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mStripeModule dependencies initialized[39m[38;5;3m +25ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mZoomModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mUploadsModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mContactModule dependencies initialized[39m[38;5;3m +0ms[39m
+[31m[Nest] 144815  - [39m06/11/2026, 9:48:39 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (1)...[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[31m[Nest] 144815  - [39m06/11/2026, 9:48:42 AM [31m  ERROR[39m [38;5;3m[TypeOrmModule] [39m[31mUnable to connect to the database. Retrying (2)...[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)

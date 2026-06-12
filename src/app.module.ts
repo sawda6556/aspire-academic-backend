@@ -39,10 +39,11 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: async (configService: ConfigService) => {
         const launchMode = process.env.LAUNCH_MODE || configService.get<string>('LAUNCH_MODE', 'development');
         const nodeEnv = process.env.NODE_ENV || configService.get<string>('NODE_ENV', 'development');
         const isProduction = launchMode === 'production' || nodeEnv === 'production';
+        const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
 
         // --- DATABASE CONNECTION DEBUG ---
         const dbUrlKeys = ['DATABASE_URL', 'POSTGRES_URL', 'DATABASE_PRIVATE_URL', 'POSTGRES_PRIVATE_URL', 'RAILWAY_POSTGRES_URL', 'URL'];
@@ -58,32 +59,51 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
                            process.env.RAILWAY_POSTGRES_URL || 
                            configService.get<string>('DATABASE_URL');
 
+        let useFallback = allowDegraded && !databaseUrl;
+
         if (databaseUrl) {
           const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
           console.log(`PROBE: [AppModule] Determined Database URL: ${sanitizedUrl}`);
           
-          try {
-            const urlMatch = databaseUrl.match(/@([^:/]+):?(\d+)?\/([^?]+)/);
-            if (urlMatch) {
-              const [_, host, port, dbName] = urlMatch;
-              console.log(`PROBE: [AppModule] DB Components: host=${host}, port=${port || '5432'}, db=${dbName}`);
-            } else {
-              console.log(`PROBE: [AppModule] DB URL components could not be parsed via regex`);
+          if (allowDegraded) {
+            console.log('PROBE: [AppModule] Testing database connection for Degraded Mode fallback...');
+            try {
+              // Use pg directly to probe the connection before letting TypeORM take over
+              const { Client } = require('pg');
+              const client = new Client({ 
+                connectionString: databaseUrl,
+                ssl: { rejectUnauthorized: false },
+                connectionTimeoutMillis: 5000 
+              });
+              await client.connect();
+              await client.end();
+              console.log('PROBE: [AppModule] Database connection successful.');
+            } catch (e) {
+              console.error(`PROBE: [AppModule] Database connection FAILED: ${e.message}`);
+              console.log('DEGRADED MODE: Falling back to in-memory sqlite.');
+              useFallback = true;
             }
-          } catch (e) {
-            console.log(`PROBE: [AppModule] Error parsing DB URL components: ${e.message}`);
           }
-        } else if (isProduction) {
+        } else if (isProduction && !allowDegraded) {
           console.error('[Bootstrap] FATAL: No database connection string found in production!');
           throw new Error('FATAL: No database connection string found in production environment variables (DATABASE_URL, POSTGRES_URL, etc.)');
         }
         
-        console.log(`Database configuration: mode=${launchMode}, env=${nodeEnv}, hasDatabaseUrl=${!!databaseUrl}`);
+        console.log(`Database configuration: mode=${launchMode}, env=${nodeEnv}, hasDatabaseUrl=${!!databaseUrl}, useFallback=${useFallback}`);
         
+        if (useFallback) {
+          return {
+            type: 'sqlite',
+            database: ':memory:',
+            autoLoadEntities: true,
+            synchronize: true,
+            logging: true,
+          };
+        }
+
         // Remote databases (like Railway managed Postgres) usually require SSL
         const useSsl = !!databaseUrl || isProduction;
-        console.log(`Using SSL: ${useSsl}`);
-
+        
         return {
           type: 'postgres',
           ...(databaseUrl
@@ -101,7 +121,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
-          retryAttempts: 3, // Reduce from default 10 to fail faster if misconfigured
+          retryAttempts: allowDegraded ? 1 : 3, 
           retryDelay: 3000,
           logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
           extra: {

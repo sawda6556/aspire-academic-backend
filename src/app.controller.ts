@@ -7,6 +7,10 @@ export class AppController {
 
   @Get()
   getHello(): string {
+    const isDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+    if (isDegraded) {
+      return 'Aspire Academic API (DEGRADED MODE ACTIVE)';
+    }
     return this.appService.getHello();
   }
 
@@ -21,13 +25,22 @@ export class AppController {
       bootstrapLogs = 'Error reading logs: ' + e.message;
     }
 
+    const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+    const databaseUrl = process.env.RAILWAY_DATABASE_URL ||
+                        process.env.DATABASE_URL || 
+                        process.env.POSTGRES_URL || 
+                        process.env.DATABASE_PRIVATE_URL ||
+                        process.env.POSTGRES_PRIVATE_URL ||
+                        process.env.RAILWAY_POSTGRES_URL;
+
     return { 
-      status: 'ok', 
+      status: allowDegraded && !databaseUrl ? 'DEGRADED' : 'ok', 
+      degradedMode: allowDegraded,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       envKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')),
-      hasDbUrl: !!(process.env.DATABASE_URL || process.env.POSTGRES_URL),
+      hasDbUrl: !!databaseUrl,
       bootstrapLogs
     };
   }
