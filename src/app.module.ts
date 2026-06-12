@@ -62,7 +62,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
                            process.env.RAILWAY_POSTGRES_URL || 
                            configService.get<string>('DATABASE_URL');
 
-        let useFallback = allowDegraded && !databaseUrl;
+        let useFallback = true; // FORCE FOR TROUBLESHOOTING
 
         if (databaseUrl) {
           const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
