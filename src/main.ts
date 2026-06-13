@@ -15,7 +15,11 @@ const BOOTSTRAP_LOG = '/tmp/bootstrap.log';
 function log(message: string) {
   const msg = `[${new Date().toISOString()}] ${message}\n`;
   console.log(message);
-  fs.appendFileSync(BOOTSTRAP_LOG, msg);
+  try {
+    fs.appendFileSync(BOOTSTRAP_LOG, msg);
+  } catch (e) {
+    console.error(`Failed to write to bootstrap log: ${e.message}`);
+  }
 }
 
 async function bootstrap() {
