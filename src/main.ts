@@ -1,4 +1,41 @@
 console.log('PROBE: Starting process');
+if (process.env.DEBUG_MODE === 'true') {
+  console.log('DEBUG MODE ACTIVE: Starting minimal debug server BEFORE imports...');
+  const http = require('http');
+  const fs = require('fs');
+  const port = process.env.PORT || 3000;
+  const server = http.createServer((req, res) => {
+    console.log(`Debug server received request: ${req.url}`);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    const env = {};
+    Object.keys(process.env).forEach(k => {
+      if (!k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')) {
+        env[k] = process.env[k];
+      } else {
+        env[k] = '********';
+      }
+    });
+    res.end(JSON.stringify({
+      message: 'Aspire Academic Debug Server (Early Start)',
+      timestamp: new Date().toISOString(),
+      env,
+      logs: 'Early start - no bootstrap logs yet'
+    }, null, 2));
+  });
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Debug server listening on port ${port}`);
+  });
+  // We don't return here yet if we want to allow other code to run, 
+  // but for absolute debugging we should probably stop.
+  // Given we are in DEBUG_MODE, let's stop here to be safe.
+  // @ts-ignore
+  if (global.process) {
+     // Keep process alive but don't proceed to imports yet
+     // Actually, we can't stop imports because they are hoisted if we use 'import'
+     // So we must use 'process.exit' or just accept that imports will happen.
+  }
+}
+
 console.log('--- GLOBAL BOOTSTRAP START ---');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
