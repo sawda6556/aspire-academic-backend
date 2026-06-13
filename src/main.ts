@@ -1,5 +1,7 @@
 console.log('PROBE: Starting process');
-if (process.env.DEBUG_MODE === 'true') {
+// FORCE DEBUG MODE FOR EMERGENCY TROUBLESHOOTING
+const FORCED_DEBUG = true; 
+if (FORCED_DEBUG || process.env.DEBUG_MODE === 'true') {
   console.log('DEBUG MODE ACTIVE: Starting minimal debug server BEFORE imports...');
   const http = require('http');
   const fs = require('fs');
