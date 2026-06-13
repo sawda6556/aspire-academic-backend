@@ -1,35 +1,159 @@
+console.log('PROBE: Starting process');
+// FORCE DEBUG MODE FOR EMERGENCY TROUBLESHOOTING
+const FORCED_DEBUG = true; 
+if (FORCED_DEBUG || process.env.DEBUG_MODE === 'true') {
+  console.log('DEBUG MODE ACTIVE: Starting minimal debug server BEFORE imports...');
+  const http = require('http');
+  const fs = require('fs');
+  const port = process.env.PORT || 3000;
+  const server = http.createServer((req, res) => {
+    console.log(`Debug server received request: ${req.url}`);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    const env = {};
+    Object.keys(process.env).forEach(k => {
+      if (!k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')) {
+        env[k] = process.env[k];
+      } else {
+        env[k] = '********';
+      }
+    });
+    res.end(JSON.stringify({
+      message: 'Aspire Academic Debug Server (Early Start)',
+      timestamp: new Date().toISOString(),
+      env,
+      logs: 'Early start - no bootstrap logs yet'
+    }, null, 2));
+  });
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Debug server listening on port ${port}`);
+  });
+  // We don't return here yet if we want to allow other code to run, 
+  // but for absolute debugging we should probably stop.
+  // Given we are in DEBUG_MODE, let's stop here to be safe.
+  // @ts-ignore
+  if (global.process) {
+     // Keep process alive but don't proceed to imports yet
+     // Actually, we can't stop imports because they are hoisted if we use 'import'
+     // So we must use 'process.exit' or just accept that imports will happen.
+  }
+}
 
-console.log('PROBE: Starting ULTRA MINIMAL process');
-const http = require('http');
-const port = process.env.PORT || 3000;
-console.log('PROBE: Port is ' + port);
+console.log('--- GLOBAL BOOTSTRAP START ---');
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
 
-const server = http.createServer((req, res) => {
-  console.log('PROBE: Received request ' + req.url);
-  res.writeHead(200, {'Content-Type': 'application/json'});
+// Polyfill for Node.js < 19 where crypto.randomUUID is not global
+if (!global.crypto) {
+  (global as any).crypto = crypto;
+}
+
+const BOOTSTRAP_LOG = '/tmp/bootstrap.log';
+function log(message: string) {
+  const msg = `[${new Date().toISOString()}] ${message}\n`;
+  console.log(message);
+  try {
+    fs.appendFileSync(BOOTSTRAP_LOG, msg);
+  } catch (e) {
+    console.error(`Failed to write to bootstrap log: ${e.message}`);
+  }
+}
+
+async function bootstrap() {
+  log('Starting application bootstrap...');
+
+  if (process.env.DEBUG_MODE === 'true') {
+    log('DEBUG MODE ACTIVE: Starting minimal debug server...');
+    const http = require('http');
+    const port = process.env.PORT || 3000;
+    const server = http.createServer((req, res) => {
+      log(`Debug server received request: ${req.url}`);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      const env = {};
+      Object.keys(process.env).forEach(k => {
+        if (!k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')) {
+          env[k] = process.env[k];
+        } else {
+          env[k] = '********';
+        }
+      });
+      res.end(JSON.stringify({
+        message: 'Aspire Academic Debug Server',
+        timestamp: new Date().toISOString(),
+        env,
+        bootstrapLogs: fs.existsSync(BOOTSTRAP_LOG) ? fs.readFileSync(BOOTSTRAP_LOG, 'utf8') : 'No logs found'
+      }, null, 2));
+    });
+    server.listen(port, '0.0.0.0', () => {
+      log(`Debug server listening on port ${port}`);
+    });
+    return; // Stop here
+  }
   
-  const env = {};
-  Object.keys(process.env).forEach(k => {
-    if (!k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')) {
-      env[k] = process.env[k];
-    } else {
-      env[k] = '********';
+  const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+
+  // Masked DB URL Probe
+  const dbUrl = process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (dbUrl) {
+    const masked = dbUrl.replace(/:([^:@/]+)@/, ':****@');
+    log(`PROBE: Masked DATABASE_URL detected: ${masked}`);
+  } else {
+    log('PROBE: No DATABASE_URL or equivalent found in process.env');
+  }
+
+  log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
+  
+  // Detailed environment probe (masked)
+  Object.keys(process.env).forEach(key => {
+    if (key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('RAILWAY') || key === 'PORT' || key === 'HOST') {
+      const val = process.env[key];
+      const masked = val ? val.replace(/:([^:@/]+)@/, ':****@') : 'undefined';
+      log(`PROBE: ENV: ${key}=${masked}`);
     }
   });
+  
+  let app;
+  try {
+    log('Attempting NestFactory.create(AppModule)...');
+    app = await NestFactory.create(AppModule);
+    log('App instance created successfully');
+  } catch (error) {
+    log(`CRITICAL: Error during NestFactory.create: ${error.message}`);
+    log(`ERROR STACK: ${error.stack}`);
+    
+    if (allowDegraded) {
+      log('DEGRADED MODE: Primary AppModule failed. This should not happen with our fallback logic in AppModule. Investigate synchronous initialization errors.');
+    }
+    process.exit(1);
+  }
 
-  res.end(JSON.stringify({ 
-    status: 'ok', 
-    message: 'ULTRA MINIMAL DEBUG SERVER', 
-    timestamp: new Date().toISOString(),
-    env 
-  }, null, 2));
-});
+  try {
+    app.useGlobalPipes(new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
+    app.enableCors();
+    log('Middleware configured');
 
-server.listen(port, '0.0.0.0', () => {
-  console.log('PROBE: Debug server listening on ' + port);
-});
-
-// Keep process alive indefinitely
-setInterval(() => {
-  console.log('PROBE: Still alive... ' + new Date().toISOString());
-}, 10000);
+    const port = process.env.PORT;
+    if (!port) {
+      log('CRITICAL: PORT environment variable is not set! Railway requires this to route traffic.');
+      if (process.env.NODE_ENV === 'production' && !allowDegraded) {
+        throw new Error('Missing PORT environment variable in production');
+      }
+    }
+    const finalPort = port ? parseInt(port, 10) : 3000;
+    log(`Attempting to listen on port: ${finalPort} (from env.PORT: ${port})`);
+    
+    await app.listen(finalPort, '0.0.0.0');
+    log(`Application is successfully running on: http://0.0.0.0:${finalPort}`);
+  } catch (error) {
+    log(`Error during application startup: ${error.message}`);
+    log(error.stack);
+    process.exit(1);
+  }
+}
+bootstrap();

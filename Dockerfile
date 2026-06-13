@@ -1,7 +1,22 @@
+# Stage 1: Build
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+# Install build tools for native modules if needed
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Run
 FROM node:20-slim
 WORKDIR /app
-COPY package.json ./
-RUN echo "Skipping install"
-COPY . .
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+# Copy uploads folder if needed
+COPY --from=builder /app/uploads ./uploads
+
 EXPOSE 3000
-CMD ["node", "-e", "const http = require('http'); const port = process.env.PORT || 3000; http.createServer((req, res) => { res.writeHead(200, {'Content-Type': 'application/json'}); res.end(JSON.stringify({message: 'Railway Troubleshoot Docker Server', port, env: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN'))})); }).listen(port, '0.0.0.0', () => console.log('Listening on ' + port));"]
+# Run the app. NestJS app usually listens on PORT env var.
+CMD ["node", "dist/main"]
