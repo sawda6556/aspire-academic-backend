@@ -24,6 +24,34 @@ function log(message: string) {
 
 async function bootstrap() {
   log('Starting application bootstrap...');
+
+  if (process.env.DEBUG_MODE === 'true') {
+    log('DEBUG MODE ACTIVE: Starting minimal debug server...');
+    const http = require('http');
+    const port = process.env.PORT || 3000;
+    const server = http.createServer((req, res) => {
+      log(`Debug server received request: ${req.url}`);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      const env = {};
+      Object.keys(process.env).forEach(k => {
+        if (!k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')) {
+          env[k] = process.env[k];
+        } else {
+          env[k] = '********';
+        }
+      });
+      res.end(JSON.stringify({
+        message: 'Aspire Academic Debug Server',
+        timestamp: new Date().toISOString(),
+        env,
+        bootstrapLogs: fs.existsSync(BOOTSTRAP_LOG) ? fs.readFileSync(BOOTSTRAP_LOG, 'utf8') : 'No logs found'
+      }, null, 2));
+    });
+    server.listen(port, '0.0.0.0', () => {
+      log(`Debug server listening on port ${port}`);
+    });
+    return; // Stop here
+  }
   
   const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
 
