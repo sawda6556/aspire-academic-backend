@@ -72,10 +72,10 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
           console.log('PROBE: [AppModule] sqlite3 driver is NOT available.');
         }
 
+        const maskedUrl = databaseUrl ? databaseUrl.replace(/:([^:@]+)@/, ':****@') : 'null';
+        console.log('PROBE: DATABASE_URL=' + maskedUrl);
+
         if (databaseUrl) {
-          const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
-          console.log(`PROBE: [AppModule] Determined Database URL: ${sanitizedUrl}`);
-          
           if (allowDegraded) {
             console.log('PROBE: [AppModule] Testing database connection for Degraded Mode fallback...');
             try {
