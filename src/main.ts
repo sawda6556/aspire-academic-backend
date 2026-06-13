@@ -34,6 +34,15 @@ async function bootstrap() {
 
   log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
   
+  // Detailed environment probe (masked)
+  Object.keys(process.env).forEach(key => {
+    if (key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('RAILWAY') || key === 'PORT' || key === 'HOST') {
+      const val = process.env[key];
+      const masked = val ? val.replace(/:([^:@/]+)@/, ':****@') : 'undefined';
+      log(`PROBE: ENV: ${key}=${masked}`);
+    }
+  });
+  
   let app;
   try {
     log('Attempting NestFactory.create(AppModule)...');

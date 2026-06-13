@@ -62,9 +62,17 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
                            process.env.RAILWAY_POSTGRES_URL || 
                            configService.get<string>('DATABASE_URL');
 
-        let useFallback = true; // FORCE FOR TROUBLESHOOTING
+        let useFallback = false;
+        let sqliteAvailable = false;
+        try {
+          require.resolve('sqlite3');
+          sqliteAvailable = true;
+          console.log('PROBE: [AppModule] sqlite3 driver is available.');
+        } catch (e) {
+          console.log('PROBE: [AppModule] sqlite3 driver is NOT available.');
+        }
 
-        if (databaseUrl && !useFallback) {
+        if (databaseUrl) {
           const sanitizedUrl = databaseUrl.replace(/:([^:@/]+)@/, ':****@');
           console.log(`PROBE: [AppModule] Determined Database URL: ${sanitizedUrl}`);
           
@@ -86,15 +94,20 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               console.log('PROBE: [AppModule] Database connection successful.');
             } catch (e) {
               console.error(`PROBE: [AppModule] Database connection FAILED: ${e.message}`);
-              console.log('DEGRADED MODE: Falling back to in-memory sqlite.');
-              useFallback = true;
+              if (sqliteAvailable) {
+                console.log('DEGRADED MODE: Falling back to in-memory sqlite.');
+                useFallback = true;
+              } else {
+                console.error('DEGRADED MODE: Database failed and sqlite3 is NOT available. Cannot fallback.');
+              }
             }
           }
-        } else if (databaseUrl && useFallback) {
-          console.log('PROBE: [AppModule] Database URL found but forcing Fallback (SQLite). Skipping probe.');
         } else {
           console.log('PROBE: [AppModule] No databaseUrl found.');
-          if (isProduction && !allowDegraded) {
+          if (allowDegraded && sqliteAvailable) {
+            console.log('DEGRADED MODE: No DB URL, falling back to sqlite.');
+            useFallback = true;
+          } else if (isProduction && !allowDegraded) {
             console.error('[Bootstrap] FATAL: No database connection string found in production!');
             throw new Error('FATAL: No database connection string found in production environment variables (DATABASE_URL, POSTGRES_URL, etc.)');
           }
