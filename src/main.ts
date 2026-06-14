@@ -1,5 +1,5 @@
 console.log('PROBE: Starting process');
-console.log('--- GLOBAL BOOTSTRAP START (v0.0.3) ---');
+console.log('--- GLOBAL BOOTSTRAP START (v0.0.4) ---');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';

@@ -7,7 +7,7 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    const isDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+    const isDegraded = process.env.ALLOW_DEGRADED_MODE !== 'false';
     if (isDegraded) {
       return 'Aspire Academic API (DEGRADED MODE ACTIVE)';
     }
@@ -25,7 +25,7 @@ export class AppController {
       bootstrapLogs = 'Error reading logs: ' + e.message;
     }
 
-    const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+    const allowDegraded = process.env.ALLOW_DEGRADED_MODE !== 'false';
     const databaseUrl = process.env.RAILWAY_DATABASE_URL ||
                         process.env.DATABASE_URL || 
                         process.env.POSTGRES_URL || 

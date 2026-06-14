@@ -44,7 +44,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
         const launchMode = process.env.LAUNCH_MODE || configService.get<string>('LAUNCH_MODE', 'development');
         const nodeEnv = process.env.NODE_ENV || configService.get<string>('NODE_ENV', 'development');
         const isProduction = launchMode === 'production' || nodeEnv === 'production';
-        const allowDegraded = process.env.ALLOW_DEGRADED_MODE === 'true';
+        const allowDegraded = process.env.ALLOW_DEGRADED_MODE !== 'false';
 
         console.log(`[AppModule] allowDegraded=${allowDegraded}, isProduction=${isProduction}`);
 
