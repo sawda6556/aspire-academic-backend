@@ -1,5 +1,5 @@
 console.log('PROBE: Starting process');
-console.log('--- GLOBAL BOOTSTRAP START (v0.0.4) ---');
+console.log('--- GLOBAL BOOTSTRAP START (v0.0.5) ---');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -66,8 +66,18 @@ async function bootstrap() {
 
   let app;
   try {
-    log('Attempting NestFactory.create(AppModule)...');
-    app = await NestFactory.create(AppModule);
+    log('Attempting NestFactory.create(AppModule) with timeout...');
+    
+    // Create a timeout promise
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('NestFactory.create timed out after 30s')), 30000)
+    );
+
+    app = await Promise.race([
+      NestFactory.create(AppModule),
+      timeout
+    ]) as any;
+    
     log('App instance created successfully');
 
     app.useGlobalPipes(new ValidationPipe({

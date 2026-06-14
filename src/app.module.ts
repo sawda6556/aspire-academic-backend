@@ -147,7 +147,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
-          retryAttempts: allowDegraded ? 1 : 3, 
+          retryAttempts: 0, 
           retryDelay: 3000,
           logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
           extra: {
