@@ -1,3 +1,5 @@
+console.log('PROBE: Starting process');
+console.log('--- GLOBAL BOOTSTRAP START ---');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -22,9 +24,10 @@ function log(message: string) {
 }
 
 async function bootstrap() {
+  log('Starting application bootstrap...');
   const port = process.env.PORT || '3000';
   const finalPort = parseInt(port, 10);
-
+  
   if (process.env.DEBUG_MODE === 'true') {
     log('DEBUG MODE ACTIVE: Starting minimal debug server...');
     const server = http.createServer((req, res) => {
@@ -51,9 +54,8 @@ async function bootstrap() {
     return; // Stop here and don't start NestJS
   }
 
-  log('--- GLOBAL BOOTSTRAP START ---');
   log(`Environment Variable Keys: ${Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')).join(', ')}`);
-
+  
   const dbUrl = process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (dbUrl) {
     const masked = dbUrl.replace(/:([^:@/]+)@/, ':****@');
@@ -97,5 +99,4 @@ async function bootstrap() {
     server.listen(finalPort, '0.0.0.0');
   }
 }
-
 bootstrap();

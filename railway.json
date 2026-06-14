@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/shorthand.schema.json",
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "healthCheckPath": "/health",
+    "healthCheckTimeout": 300,
+    "serviceName": "aspire-academic-backend-production"
+  }
+}
