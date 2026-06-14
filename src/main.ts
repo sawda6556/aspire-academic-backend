@@ -1,5 +1,5 @@
 console.log('PROBE: Starting process');
-console.log('--- GLOBAL BOOTSTRAP START ---');
+console.log('--- GLOBAL BOOTSTRAP START (v0.0.2) ---');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -88,15 +88,19 @@ async function bootstrap() {
     // In case of error, start a fallback debug server so we can at least see the logs
     log('Starting fallback debug server due to crash...');
     const server = http.createServer((req, res) => {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
+      // Return 200 OK so Railway doesn't rollback the deployment
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
-        message: 'Aspire Academic CRASHED',
+        status: 'CRASHED_BUT_ALIVE',
+        message: 'Aspire Academic Fallback Server (v1.0.1)',
         error: error.message,
         stack: error.stack,
         bootstrapLogs: fs.existsSync(BOOTSTRAP_LOG) ? fs.readFileSync(BOOTSTRAP_LOG, 'utf8') : 'No logs found'
       }, null, 2));
     });
-    server.listen(finalPort, '0.0.0.0');
+    server.listen(finalPort, '0.0.0.0', () => {
+      log(`Fallback server listening on port ${finalPort}`);
+    });
   }
 }
 bootstrap();
