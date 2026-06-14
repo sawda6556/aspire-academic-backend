@@ -5,7 +5,7 @@
   },
   "deploy": {
     "restartPolicyType": "ON_FAILURE",
-    "healthCheckPath": "/health",
+    "healthCheckPath": "/",
     "healthCheckTimeout": 300,
     "serviceName": "aspire-academic-backend-production"
   }
