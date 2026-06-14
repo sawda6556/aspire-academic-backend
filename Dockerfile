@@ -6,7 +6,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including devDependencies like @nestjs/cli)
+# Install ALL dependencies
 RUN npm install
 
 # Copy the rest of the application code
@@ -15,16 +15,19 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Remove development dependencies to keep the image small
+RUN npm prune --production
+
 # Runner stage
 FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files (for reference)
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm install --omit=dev
+# Copy node_modules from builder (they are already pruned)
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the compiled application from the builder stage
 COPY --from=builder /app/dist ./dist
@@ -37,5 +40,4 @@ ENV NODE_ENV=production
 ENV ALLOW_DEGRADED_MODE=true
 
 # Start the application
-# Using dist/main.js explicitly or dist/main both usually work for CommonJS
 CMD ["node", "dist/main"]
