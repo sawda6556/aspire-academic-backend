@@ -54,7 +54,8 @@ async function bootstrap() {
     log('Step 1: Importing @nestjs/core...');
     const { NestFactory } = await import('@nestjs/core');
     log('Step 2: Importing AppModule...');
-    const { AppModule } = await import('./app.module');
+    // Using require for app.module to avoid TS issues with nodenext extensions in sandbox build
+    const { AppModule } = require('./app.module');
     
     log('Step 3: Creating Nest application...');
     
