@@ -1,64 +1,94 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import * as fs from 'fs';
 import * as http from 'http';
 
-async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-  const port = process.env.PORT || 3000;
+console.log('--- GLOBAL BOOTSTRAP START (v0.0.7) ---');
 
-  console.log(`[BOOTSTRAP] Starting Aspire Academic Backend (Production Mode)`);
-  console.log(`[BOOTSTRAP] Port: ${port}`);
-  console.log(`[BOOTSTRAP] NODE_ENV: ${process.env.NODE_ENV}`);
+async function bootstrap() {
+  console.log('BOOTSTRAP: Initializing...');
+  const BOOTSTRAP_LOG = '/tmp/bootstrap.log';
+  const bootstrapLogs: string[] = [];
+
+  const log = (msg: string) => {
+    const timestamp = new Date().toISOString();
+    const formattedMsg = `[${timestamp}] ${msg}`;
+    console.log(formattedMsg);
+    bootstrapLogs.push(formattedMsg);
+    try {
+      fs.appendFileSync(BOOTSTRAP_LOG, formattedMsg + '\n');
+    } catch (e) {}
+  };
+
+  log('Detecting port...');
+  const finalPort = process.env.PORT || '3000';
+  const portNumber = parseInt(finalPort as string, 10);
+  log(`Port detected: ${finalPort}`);
+
+  const startFallback = (errorMsg: string, stack?: string) => {
+    log('Starting fallback debug server...');
+    const server = http.createServer((req, res) => {
+      if (req.url === '/health' || req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'CRASHED_BUT_ALIVE',
+          version: '0.0.7-fallback',
+          timestamp: new Date().toISOString(),
+          port: finalPort,
+          error: errorMsg,
+          stack,
+          env: {
+             NODE_ENV: process.env.NODE_ENV,
+             PORT: process.env.PORT,
+             RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+             HAS_DATABASE_URL: !!(process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL)
+          },
+          bootstrapLogs
+        }, null, 2));
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+    server.listen(portNumber, '0.0.0.0', () => {
+      log(`Fallback server listening on port ${portNumber}`);
+    });
+  };
 
   try {
-    // Create NestJS application
-    const app = await NestFactory.create(AppModule);
+    log('Step 1: Creating Nest application...');
+    
+    // 45 second timeout for NestFactory.create
+    // This handles cases where the DB connection hangs
+    const appPromise = NestFactory.create(AppModule);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('NestJS Bootstrap Timeout (45s)')), 45000)
+    );
 
-    // Security & Middleware
+    const app = await Promise.race([appPromise, timeoutPromise]) as any;
+    log('Step 2: Nest application created successfully');
+
+    app.useGlobalPipes(new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
+    
     app.enableCors();
+    log('Step 3: Middleware and CORS configured');
 
-    // Start listening
-    await app.listen(port, '0.0.0.0');
-    
-    const url = await app.getUrl();
-    logger.log(`Application is successfully running on: ${url}`);
-    
+    log(`Step 4: Attempting to listen on port: ${portNumber}`);
+    await app.listen(portNumber, '0.0.0.0');
+    log(`Step 5: Application is successfully running on: http://0.0.0.0:${portNumber}`);
+
   } catch (error: any) {
-    console.error(`[FATAL] NestJS Bootstrap Failed: ${error.message}`);
-    if (error.stack) {
-      console.error(error.stack);
-    }
-
-    // Start a fallback server to report the error via the health endpoint
-    // This keeps the container 'alive' in Railway's eyes so we can see logs
-    const fallbackServer = http.createServer((req, res) => {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        status: 'CRASHED_ON_BOOTSTRAP',
-        message: error.message,
-        stack: error.stack,
-        env: {
-          NODE_ENV: process.env.NODE_ENV,
-          PORT: process.env.PORT,
-          DATABASE_URL_SET: !!process.env.DATABASE_URL
-        }
-      }, null, 2));
-    });
-
-    fallbackServer.listen(port, '0.0.0.0', () => {
-      console.log(`[FALLBACK] Error reporting server active on port ${port}`);
-    });
+    log(`FATAL BOOTSTRAP ERROR: ${error.message}`);
+    if (error.stack) log(error.stack);
+    startFallback(error.message, error.stack);
   }
 }
 
-// Global Exception Handlers
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
+bootstrap().catch(err => {
+  console.error('CRITICAL: bootstrap() promise rejected:', err);
 });
-
-process.on('uncaughtException', (error) => {
-  console.error('[Uncaught Exception] thrown:', error);
-});
-
-bootstrap();

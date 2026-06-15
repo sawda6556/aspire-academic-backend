@@ -1,4 +1,4 @@
-# Stage 1: Build
+# Builder stage
 FROM node:20 AS builder
 
 WORKDIR /app
@@ -6,40 +6,38 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies)
+# Install ALL dependencies
 RUN npm install
 
-# Copy source code
+# Copy the rest of the application code
 COPY . .
 
 # Build the application
 RUN npm run build
 
-# Stage 2: Run
-FROM node:20
+# Remove development dependencies to keep the image small
+RUN npm prune --production
+
+# Runner stage
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files (for reference)
 COPY package*.json ./
 
-# Install only production dependencies
-# Using --include=dev might be safer if some build tools are needed, 
-# but --omit=dev is what was requested for the runner stage.
-RUN npm install --omit=dev
+# Copy node_modules from builder (they are already pruned)
+COPY --from=builder /app/node_modules ./node_modules
 
-# Copy built assets from builder
+# Copy the compiled application from the builder stage
 COPY --from=builder /app/dist ./dist
 
-# Create uploads directory and subdirectories
+# Create uploads directory and subdirectories to ensure they exist
 RUN mkdir -p uploads/messages uploads/resources uploads/verification
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV ALLOW_DEGRADED_MODE=true
-
-# Explicitly expose the port (Railway uses PORT env var)
-EXPOSE 8080
 
 # Start the application
 CMD ["node", "dist/main"]
