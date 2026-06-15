@@ -1,5 +1,4 @@
-# Builder stage
-FROM node:20 AS builder
+FROM node:20
 
 WORKDIR /app
 
@@ -15,17 +14,16 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Runner stage
-FROM node:20 AS runner
-
-WORKDIR /app
-
-# Copy EVERYTHING from builder
-COPY --from=builder /app ./
+# Create uploads directory and subdirectories to ensure they exist
+RUN mkdir -p uploads/messages uploads/resources uploads/verification
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV ALLOW_DEGRADED_MODE=true
+ENV PORT=3000
 
-# START A DUMMY SERVER FOR INFRASTRUCTURE VERIFICATION
-CMD ["node", "-e", "const http = require('http'); const port = process.env.PORT || 3000; http.createServer((req, res) => { console.log('Req:', req.url); res.writeHead(200, {'Content-Type': 'application/json'}); res.end(JSON.stringify({ status: 'INFRA_OK', env: { PORT: process.env.PORT, NODE_VERSION: process.version } })); }).listen(port, '0.0.0.0', () => { console.log('Dummy server listening on port', port); });"]
+# Explicitly expose port 3000
+EXPOSE 3000
+
+# Start the application using the v0.0.8 bootstrap with fallback
+CMD ["node", "dist/main"]
