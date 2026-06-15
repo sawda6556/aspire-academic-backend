@@ -15,22 +15,13 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Remove development dependencies to keep the image small
-RUN npm prune --production
-
 # Runner stage
 FROM node:20 AS runner
 
 WORKDIR /app
 
-# Copy package files (for reference)
-COPY package*.json ./
-
-# Copy node_modules from builder (they are already pruned)
-COPY --from=builder /app/node_modules ./node_modules
-
-# Copy the compiled application from the builder stage
-COPY --from=builder /app/dist ./dist
+# Copy EVERYTHING from builder to ensure nothing is missing
+COPY --from=builder /app ./
 
 # Create uploads directory and subdirectories to ensure they exist
 RUN mkdir -p uploads/messages uploads/resources uploads/verification
