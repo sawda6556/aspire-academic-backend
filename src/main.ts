@@ -1,94 +1,113 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
-import * as fs from 'fs';
 import * as http from 'http';
 
-console.log('--- GLOBAL BOOTSTRAP START (v0.0.7) ---');
+const BOOTSTRAP_VERSION = '0.0.11';
+console.log(`--- ROBUST BOOTSTRAP START (v${BOOTSTRAP_VERSION}) ---`);
 
-async function bootstrap() {
-  console.log('BOOTSTRAP: Initializing...');
-  const BOOTSTRAP_LOG = '/tmp/bootstrap.log';
-  const bootstrapLogs: string[] = [];
+const finalPort = process.env.PORT || '3000';
+const bootstrapLogs: string[] = [];
 
-  const log = (msg: string) => {
-    const timestamp = new Date().toISOString();
-    const formattedMsg = `[${timestamp}] ${msg}`;
-    console.log(formattedMsg);
-    bootstrapLogs.push(formattedMsg);
-    try {
-      fs.appendFileSync(BOOTSTRAP_LOG, formattedMsg + '\n');
-    } catch (e) {}
-  };
+const log = (msg: string) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${msg}`);
+  bootstrapLogs.push(`[${timestamp}] ${msg}`);
+};
 
-  log('Detecting port...');
-  const finalPort = process.env.PORT || '3000';
-  const portNumber = parseInt(finalPort as string, 10);
-  log(`Port detected: ${finalPort}`);
+log(`Bootstrap v${BOOTSTRAP_VERSION} initialized. Port: ${finalPort}`);
 
-  const startFallback = (errorMsg: string, stack?: string) => {
-    log('Starting fallback debug server...');
-    const server = http.createServer((req, res) => {
-      if (req.url === '/health' || req.url === '/') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          status: 'CRASHED_BUT_ALIVE',
-          version: '0.0.7-fallback',
-          timestamp: new Date().toISOString(),
-          port: finalPort,
-          error: errorMsg,
-          stack,
-          env: {
-             NODE_ENV: process.env.NODE_ENV,
-             PORT: process.env.PORT,
-             RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
-             HAS_DATABASE_URL: !!(process.env.RAILWAY_DATABASE_URL || process.env.DATABASE_URL)
-          },
-          bootstrapLogs
-        }, null, 2));
-      } else {
-        res.writeHead(404);
-        res.end();
-      }
-    });
-    server.listen(portNumber, '0.0.0.0', () => {
-      log(`Fallback server listening on port ${portNumber}`);
-    });
-  };
+// 1. Start a diagnostic server IMMEDIATELY to satisfy Railway's health check
+let nestApp: any = null;
+let isNestReady = false;
 
+const diagnosticServer = http.createServer((req, res) => {
+  log(`Diagnostic server received request: ${req.url}`);
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  
+  if (isNestReady) {
+    res.end(JSON.stringify({
+      status: 'HANDOVER_IN_PROGRESS',
+      message: 'NestJS is ready. Diagnostic server is closing.',
+      version: BOOTSTRAP_VERSION,
+      bootstrapLogs
+    }));
+  } else {
+    res.end(JSON.stringify({
+      status: 'BOOTING',
+      message: 'NestJS is still initializing in the background.',
+      version: BOOTSTRAP_VERSION,
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT,
+        DATABASE_URL_SET: !!process.env.DATABASE_URL
+      },
+      bootstrapLogs
+    }, null, 2));
+  }
+});
+
+diagnosticServer.listen(finalPort, '0.0.0.0', () => {
+  log('Diagnostic server is listening on 0.0.0.0:' + finalPort);
+});
+
+// 2. Start NestJS in the background
+async function bootstrapNest() {
+  log('Starting NestJS initialization...');
   try {
-    log('Step 1: Creating Nest application...');
+    // Dynamic import to avoid issues if AppModule has top-level errors before we start diagnostic server
+    const { AppModule } = await import('./app.module');
     
-    // 45 second timeout for NestFactory.create
-    // This handles cases where the DB connection hangs
-    const appPromise = NestFactory.create(AppModule);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('NestJS Bootstrap Timeout (45s)')), 45000)
-    );
-
-    const app = await Promise.race([appPromise, timeoutPromise]) as any;
-    log('Step 2: Nest application created successfully');
-
+    log('Creating Nest application instance...');
+    const app = await NestFactory.create(AppModule);
+    
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
     }));
-    
     app.enableCors();
-    log('Step 3: Middleware and CORS configured');
+    
+    log('Nest application instance created and configured.');
+    nestApp = app;
+    isNestReady = true;
 
-    log(`Step 4: Attempting to listen on port: ${portNumber}`);
-    await app.listen(portNumber, '0.0.0.0');
-    log(`Step 5: Application is successfully running on: http://0.0.0.0:${portNumber}`);
+    // 3. Handover: Close diagnostic server and start NestJS on the same port
+    log('Closing diagnostic server for port handover...');
+    diagnosticServer.close(async () => {
+      log('Diagnostic server closed. NestJS taking over port ' + finalPort);
+      try {
+        await nestApp.listen(finalPort, '0.0.0.0');
+        log('NestJS is successfully listening on 0.0.0.0:' + finalPort);
+      } catch (listenError: any) {
+        log(`CRITICAL: NestJS failed to listen on port ${finalPort}: ${listenError.message}`);
+        startFailureServer(listenError);
+      }
+    });
 
   } catch (error: any) {
-    log(`FATAL BOOTSTRAP ERROR: ${error.message}`);
-    if (error.stack) log(error.stack);
-    startFallback(error.message, error.stack);
+    log(`CRITICAL: NestJS initialization failed: ${error.message}`);
+    if (error.stack) console.error(error.stack);
+    startFailureServer(error);
   }
 }
 
-bootstrap().catch(err => {
-  console.error('CRITICAL: bootstrap() promise rejected:', err);
-});
+function startFailureServer(error: any) {
+  log('Starting persistent failure server...');
+  const failureServer = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'NESTJS_FAILED_FINAL',
+      version: BOOTSTRAP_VERSION,
+      error: error.message,
+      stack: error.stack,
+      bootstrapLogs
+    }, null, 2));
+  });
+  
+  // Try to listen, but might fail if port is still busy
+  failureServer.listen(finalPort, '0.0.0.0', () => {
+    log('Failure reporting server is listening on 0.0.0.0:' + finalPort);
+  });
+}
+
+bootstrapNest();
