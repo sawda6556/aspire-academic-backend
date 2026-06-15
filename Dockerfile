@@ -20,10 +20,9 @@ RUN mkdir -p uploads/messages uploads/resources uploads/verification
 # Set environment variables
 ENV NODE_ENV=production
 ENV ALLOW_DEGRADED_MODE=true
-ENV PORT=3000
 
-# Explicitly expose port 3000
-EXPOSE 3000
+# Explicitly expose the port from env
+EXPOSE 8080
 
-# Start the application using the v0.0.8 bootstrap with fallback
+# Start the real application
 CMD ["node", "dist/main"]
