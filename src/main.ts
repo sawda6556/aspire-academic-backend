@@ -1,4 +1,4 @@
-console.log('--- GLOBAL BOOTSTRAP START (v0.0.6) ---');
+console.log('--- GLOBAL BOOTSTRAP START (v0.0.7) ---');
 
 async function bootstrap() {
   console.log('BOOTSTRAP: Initializing...');
@@ -16,50 +16,51 @@ async function bootstrap() {
     } catch (e) {}
   };
 
-  log('Detecting port...');
+  log('Detecting environment...');
+  log(`NODE_ENV: ${process.env.NODE_ENV}`);
+  log(`PORT: ${process.env.PORT}`);
+
   const finalPort = process.env.PORT || '3000';
-  log(`Port detected: ${finalPort}`);
+  log(`Final Port: ${finalPort}`);
 
   const startFallback = (errorMsg: string, stack?: string) => {
     log('Starting fallback debug server...');
-    const http = require('http');
-    const server = http.createServer((req: any, res: any) => {
-      if (req.url === '/health' || req.url === '/') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          status: 'CRASHED_BUT_ALIVE',
-          version: '0.0.6-fallback',
-          timestamp: new Date().toISOString(),
-          port: finalPort,
-          error: errorMsg,
-          stack,
-          env: {
-             NODE_ENV: process.env.NODE_ENV,
-             PORT: process.env.PORT,
-             RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT
-          },
-          bootstrapLogs
-        }, null, 2));
-      } else {
-        res.writeHead(404);
-        res.end();
-      }
-    });
-    server.listen(finalPort, '0.0.0.0', () => {
-      log(`Fallback server listening on port ${finalPort}`);
-    });
+    try {
+      const http = require('http');
+      const server = http.createServer((req: any, res: any) => {
+        if (req.url === '/health' || req.url === '/') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            status: 'CRASHED_BUT_ALIVE',
+            version: '0.0.7-fallback',
+            timestamp: new Date().toISOString(),
+            port: finalPort,
+            error: errorMsg,
+            stack,
+            envKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('PASS') && !k.includes('KEY') && !k.includes('TOKEN')),
+            bootstrapLogs
+          }, null, 2));
+        } else {
+          res.writeHead(404);
+          res.end();
+        }
+      });
+      server.listen(finalPort, '0.0.0.0', () => {
+        log(`Fallback server listening on port ${finalPort}`);
+      });
+    } catch (e) {
+      console.error('FAILED to start fallback server:', e);
+    }
   };
 
   try {
     log('Step 1: Importing @nestjs/core...');
     const { NestFactory } = await import('@nestjs/core');
+    
     log('Step 2: Importing AppModule...');
-    // Using require for app.module to avoid TS issues with nodenext extensions in sandbox build
-    const { AppModule } = require('./app.module');
+    const { AppModule } = await import('./app.module');
     
     log('Step 3: Creating Nest application...');
-    
-    // 45 second timeout for NestFactory.create
     const appPromise = NestFactory.create(AppModule);
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('NestJS Bootstrap Timeout (45s)')), 45000)
@@ -81,6 +82,13 @@ async function bootstrap() {
     startFallback(error.message, error.stack);
   }
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
 
 bootstrap().catch(err => {
   console.error('CRITICAL: bootstrap() promise rejected:', err);

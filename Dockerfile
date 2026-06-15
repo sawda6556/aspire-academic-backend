@@ -19,7 +19,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Runner stage
-FROM node:20-slim AS runner
+FROM node:20 AS runner
 
 WORKDIR /app
 
