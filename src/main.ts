@@ -1,77 +1,64 @@
-console.log('--- DIAGNOSTIC BOOTSTRAP START (v0.0.10) ---');
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { Logger } from '@nestjs/common';
+import * as http from 'http';
 
-const finalPort = process.env.PORT || '3000';
-const http = require('http');
+async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+  const port = process.env.PORT || 3000;
 
-const bootstrapLogs: string[] = [];
-const log = (msg: string) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${msg}`);
-  bootstrapLogs.push(`[${timestamp}] ${msg}`);
-};
+  console.log(`[BOOTSTRAP] Starting Aspire Academic Backend (Production Mode)`);
+  console.log(`[BOOTSTRAP] Port: ${port}`);
+  console.log(`[BOOTSTRAP] NODE_ENV: ${process.env.NODE_ENV}`);
 
-log(`Diagnostic mode. Listening on ${finalPort} for 10 seconds before starting NestJS.`);
-
-const server = http.createServer((req: any, res: any) => {
-  log(`Request received: ${req.url}`);
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ 
-    status: 'DIAGNOSTIC_ALIVE', 
-    version: '0.0.10',
-    env: {
-      NODE_ENV: process.env.NODE_ENV,
-      PORT: process.env.PORT,
-      DATABASE_URL_SET: !!process.env.DATABASE_URL
-    },
-    bootstrapLogs
-  }, null, 2));
-});
-
-server.listen(finalPort, '0.0.0.0', () => {
-  log('Diagnostic server is UP.');
-});
-
-async function runNest() {
-  log('Starting NestJS bootstrap sequence...');
   try {
-    const { NestFactory } = await import('@nestjs/core');
-    const { AppModule } = await import('./app.module');
-    
-    log('Creating Nest application with 30s timeout...');
-    const appPromise = NestFactory.create(AppModule);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('NestJS Create Timeout (30s)')), 30000)
-    );
+    // Create NestJS application
+    const app = await NestFactory.create(AppModule);
 
-    const app: any = await Promise.race([appPromise, timeoutPromise]);
+    // Security & Middleware
     app.enableCors();
-    log('Attempting app.listen...');
-    await app.listen(finalPort, '0.0.0.0');
-    log('NestJS is UP and RUNNING.');
-  } catch (err: any) {
-    log(`NestJS Bootstrap FAILED or TIMED OUT: ${err.message}`);
-    if (err.stack) console.error(err.stack);
+
+    // Start listening
+    await app.listen(port, '0.0.0.0');
     
-    // Start a persistent failure server
-    const failureServer = http.createServer((req: any, res: any) => {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        status: 'NESTJS_FAILED_FINAL', 
-        error: err.message, 
-        stack: err.stack,
-        bootstrapLogs 
+    const url = await app.getUrl();
+    logger.log(`Application is successfully running on: ${url}`);
+    
+  } catch (error: any) {
+    console.error(`[FATAL] NestJS Bootstrap Failed: ${error.message}`);
+    if (error.stack) {
+      console.error(error.stack);
+    }
+
+    // Start a fallback server to report the error via the health endpoint
+    // This keeps the container 'alive' in Railway's eyes so we can see logs
+    const fallbackServer = http.createServer((req, res) => {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'CRASHED_ON_BOOTSTRAP',
+        message: error.message,
+        stack: error.stack,
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT,
+          DATABASE_URL_SET: !!process.env.DATABASE_URL
+        }
       }, null, 2));
     });
-    failureServer.listen(finalPort, '0.0.0.0', () => {
-      log('Failure reporting server is UP.');
+
+    fallbackServer.listen(port, '0.0.0.0', () => {
+      console.log(`[FALLBACK] Error reporting server active on port ${port}`);
     });
   }
 }
 
-setTimeout(() => {
-  log('Closing diagnostic server to free port for NestJS...');
-  server.close(() => {
-    log('Port freed. Launching NestJS...');
-    runNest();
-  });
-}, 10000);
+// Global Exception Handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[Uncaught Exception] thrown:', error);
+});
+
+bootstrap();
