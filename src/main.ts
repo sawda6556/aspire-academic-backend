@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import * as http from 'http';
 
-const BOOTSTRAP_VERSION = '0.0.13-PROBE';
+const BOOTSTRAP_VERSION = '0.0.14-DEBUG';
 console.log(`--- ROBUST BOOTSTRAP START (v${BOOTSTRAP_VERSION}) ---`);
 
 const port = process.env.PORT || '3000';
@@ -39,7 +39,10 @@ const diagnosticServer = http.createServer((req, res) => {
       NODE_ENV: process.env.NODE_ENV,
       PORT: process.env.PORT,
       DATABASE_URL_SET: !!process.env.DATABASE_URL,
-      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT
+      RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+      AVAILABLE_VARS: Object.keys(process.env).filter(k => 
+        k.includes('DATABASE') || k.includes('POSTGRES') || k.includes('RAILWAY')
+      )
     },
     error: nestError ? { message: nestError.message, stack: nestError.stack } : null,
     bootstrapLogs: bootstrapLogs.slice(-50)
