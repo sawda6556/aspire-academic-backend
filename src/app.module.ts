@@ -66,6 +66,7 @@ import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
               }),
           autoLoadEntities: true,
           synchronize: false, // Use migrations for production
+          migrationsRun: true, // Run migrations on startup
           retryAttempts: 10, 
           retryDelay: 3000,
           logging: configService.get<string>('TYPEORM_LOGGING') === 'true',
