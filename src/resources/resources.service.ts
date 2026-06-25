@@ -106,7 +106,7 @@ export class ResourcesService {
     return await this.resourceRepository.save(resource);
   }
 
-  async purchase(userId: string, resourceId: string, paymentMethodId: string) {
+  async purchase(userId: string, resourceId: string, paymentMethodId: string, stripePriceId?: string) {
     const resource = await this.findOne(resourceId);
     if (resource.status !== ResourceStatus.PUBLISHED) {
       throw new BadRequestException('Resource is not available for purchase');
@@ -123,12 +123,17 @@ export class ResourcesService {
     const platformFee = price * 0.15;
     const tutorRevenue = price - platformFee;
 
+    // Use specific price ID for PDF resources as requested
+    const isPdf = resource.file_url?.toLowerCase().endsWith('.pdf');
+    const finalStripePriceId = stripePriceId || (isPdf ? 'price_1TlyKTDdsa1ZYfPhbbs40hBs' : undefined);
+
     // Real or Mock Stripe Session (StripeService handles LAUNCH_MODE)
     const session = await this.stripeService.createCheckoutSession(
-      price,
-      'usd',
+      Math.round(price * 100),
+      'gbp',
       `${process.env.FRONTEND_URL}/store/success?id=${resourceId}`,
       `${process.env.FRONTEND_URL}/store/${resourceId}`,
+      finalStripePriceId,
     );
 
     const purchase = this.purchaseRepository.create({
