@@ -9,6 +9,7 @@ import { ParentProfile } from '../parent-profiles/entities/parent-profile.entity
 import { StudentProfile } from '../student-profiles/entities/student-profile.entity';
 import { RegisterDto, LoginDto } from '../users/dto/auth.dto';
 import { UserType, Gender } from '../common/enums';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -17,10 +18,11 @@ export class AuthService {
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
     private dataSource: DataSource,
+    private mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, user_type, gender, full_name, parent_id } = registerDto;
+    const { email, password, user_type, gender, full_name, parent_id, profile_data } = registerDto;
 
     const existingUser = await this.usersRepository.findOne({ where: { email } });
     if (existingUser) {
@@ -67,6 +69,15 @@ export class AuthService {
       }
 
       await queryRunner.commitTransaction();
+
+      // Send welcome email and notify admin
+      const userWithFullName = { ...savedUser, full_name };
+      this.mailService.sendWelcomeEmail(userWithFullName).catch(err => 
+        console.error('Failed to send welcome email:', err)
+      );
+      this.mailService.notifyAdminOnRegistration(userWithFullName, profile_data).catch(err =>
+        console.error('Failed to notify admin on registration:', err)
+      );
 
       const { password_hash, ...result } = savedUser;
       return result;

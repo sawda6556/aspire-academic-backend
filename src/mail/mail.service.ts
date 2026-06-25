@@ -55,6 +55,29 @@ export class MailService {
     await this.sendMail(adminEmail, subject, text);
   }
 
+  async sendWelcomeEmail(user: any) {
+    const subject = `Welcome to Aspire Academic Co.!`;
+    const text = `
+      Assalamu Alaikum ${user.full_name || 'there'},
+      
+      Welcome to Aspire Academic Co. - your gateway to high-quality, Islamic-friendly academic tutoring.
+      
+      We are thrilled to have you join our community. Whether you are here to learn or to share your knowledge, we are committed to providing a safe and productive environment for your academic journey.
+      
+      To get started:
+      - Complete your profile if you haven't already.
+      - Browse our available subjects and tutors.
+      - Check out our resource store for helpful study materials.
+      
+      If you have any questions, feel free to reply to this email or contact us at info@aspireacademicco.co.uk.
+      
+      JazakAllah Khair,
+      The Aspire Academic Co. Team
+    `;
+    
+    await this.sendMail(user.email, subject, text);
+  }
+
   async notifyAdminOnVerificationUpload(user: any, documentUrls: string[]) {
     const adminEmail = 'carakay68@gmail.com';
     const subject = `Verification Documents Uploaded: ${user.email}`;

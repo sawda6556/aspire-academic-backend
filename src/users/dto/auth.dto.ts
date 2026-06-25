@@ -21,6 +21,9 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   parent_id?: string; // Only for STUDENT
+
+  @IsOptional()
+  profile_data?: any;
 }
 
 export class LoginDto {

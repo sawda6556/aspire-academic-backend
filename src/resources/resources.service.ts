@@ -9,6 +9,7 @@ import { ResourceStatus } from '../common/enums';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
 import { StripeService } from '../integrations/stripe/stripe.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ResourcesService {
@@ -23,6 +24,7 @@ export class ResourcesService {
     private readonly reviewRepository: Repository<ResourceReview>,
     private readonly stripeService: StripeService,
     private readonly dataSource: DataSource,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async findAll(filters: any) {
@@ -141,6 +143,17 @@ export class ResourcesService {
     });
 
     await this.purchaseRepository.save(purchase);
+    
+    // Emit payment.success event for automated receipt
+    // In a real production environment with webhooks, this would be moved to the webhook handler.
+    this.eventEmitter.emit('payment.success', {
+      userId: userId,
+      orderId: purchase.id,
+      amount: price,
+      currency: 'usd',
+      items: [resource.title],
+      date: new Date(),
+    });
     
     return {
       purchase,
