@@ -45,8 +45,13 @@ export class ResourcesController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/buy')
-  async buy(@Request() req, @Param('id') id: string, @Body('payment_method_id') paymentMethodId: string) {
-    return this.resourcesService.purchase(req.user.id, id, paymentMethodId);
+  async buy(
+    @Request() req, 
+    @Param('id') id: string, 
+    @Body('payment_method_id') paymentMethodId: string,
+    @Body('stripe_price_id') stripePriceId?: string,
+  ) {
+    return this.resourcesService.purchase(req.user.id, id, paymentMethodId, stripePriceId);
   }
 
   @UseGuards(JwtAuthGuard)
