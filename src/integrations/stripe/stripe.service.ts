@@ -23,19 +23,26 @@ export class StripeService {
   }
 
   async createCheckoutSession(
+    userId: string,
     amount: number, 
     currency: string, 
     successUrl: string, 
     cancelUrl: string,
-    priceId?: string
+    priceId?: string,
+    metadata: any = {},
   ) {
     const launchMode = this.configService.get<string>('LAUNCH_MODE', 'test');
     
     if (this.stripe) {
       try {
-        console.log(`[STRIPE] Creating real Stripe session. PriceID: ${priceId || 'N/A'}, Amount: ${amount}`);
+        console.log(`[STRIPE] Creating real Stripe session. User: ${userId}, Amount: ${amount}`);
         const session = await this.stripe.checkout.sessions.create({
           payment_method_types: ['card'],
+          client_reference_id: userId,
+          metadata: {
+            ...metadata,
+            userId,
+          },
           line_items: [
             priceId 
               ? { price: priceId, quantity: 1 }

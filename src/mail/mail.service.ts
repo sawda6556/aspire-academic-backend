@@ -21,7 +21,7 @@ export class MailService {
   async sendMail(to: string, subject: string, text: string, attachments?: any[]) {
     try {
       await this.transporter.sendMail({
-        from: this.configService.get<string>('MAIL_FROM', '"Aspire Academic Co." <noreply@aspireacademic.com>'),
+        from: this.configService.get<string>('MAIL_FROM', '"Aspire Academic Co." <noreply@aspireacademicco.co.uk>'),
         to,
         subject,
         text,
@@ -34,7 +34,7 @@ export class MailService {
   }
 
   async notifyAdminOnRegistration(user: any, profile: any) {
-    const adminEmail = 'carakay68@gmail.com';
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
     const subject = `New ${user.user_type} Registration: ${user.full_name || user.email}`;
     const text = `
       A new user has registered on Aspire Academic Co.
@@ -79,7 +79,7 @@ export class MailService {
   }
 
   async notifyAdminOnVerificationUpload(user: any, documentUrls: string[]) {
-    const adminEmail = 'carakay68@gmail.com';
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
     const subject = `Verification Documents Uploaded: ${user.email}`;
     const text = `
       User ${user.email} has uploaded new verification documents.
@@ -121,6 +121,88 @@ export class MailService {
     `;
     
     await this.sendMail(to, subject, text);
+  }
+
+  async notifyAdminOnPayment(user: any, details: any) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
+    const subject = `💰 Payment Received: ${details.amount} ${details.currency.toUpperCase()} from ${user.email}`;
+    const text = `
+      A payment has been successfully processed on Aspire Academic Co.
+      
+      User: ${user.email}
+      Order ID: ${details.orderId}
+      Amount: ${details.amount} ${details.currency.toUpperCase()}
+      Date: ${details.date.toLocaleDateString()}
+      
+      Items:
+      ${details.items.map((item: string) => `- ${item}`).join('\n')}
+    `;
+    
+    await this.sendMail(adminEmail, subject, text);
+  }
+
+  async notifyAdminOnPaymentFailure(user: any, details: any) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
+    const subject = `❌ Payment Failed: ${user.email}`;
+    const text = `
+      A payment attempt has failed on Aspire Academic Co.
+      
+      User: ${user.email}
+      Order ID: ${details.orderId}
+      Error: ${details.error || 'Unknown error'}
+      Amount: ${details.amount} ${details.currency?.toUpperCase() || 'GBP'}
+      
+      Please contact the customer to assist with the payment issue.
+    `;
+    
+    await this.sendMail(adminEmail, subject, text);
+  }
+
+  async notifyAdminOnRefund(user: any, details: any) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
+    const subject = `💸 Refund Processed: ${user.email}`;
+    const text = `
+      A refund has been processed on Aspire Academic Co.
+      
+      User: ${user.email}
+      Order ID: ${details.orderId}
+      Amount: ${details.amount} ${details.currency.toUpperCase()}
+      Reason: ${details.reason || 'Not specified'}
+    `;
+    
+    await this.sendMail(adminEmail, subject, text);
+  }
+
+  async notifyAdminOnDispute(user: any, details: any) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
+    const subject = `⚠️ Payment Dispute Created: ${user.email}`;
+    const text = `
+      A payment dispute has been opened for a transaction on Aspire Academic Co.
+      
+      User: ${user.email}
+      Order ID: ${details.orderId}
+      Amount: ${details.amount} ${details.currency.toUpperCase()}
+      Dispute ID: ${details.disputeId}
+      Reason: ${details.reason || 'Not specified'}
+      
+      CRITICAL: Please review the dispute in the Stripe dashboard immediately.
+    `;
+    
+    await this.sendMail(adminEmail, subject, text);
+  }
+
+  async notifyAdminOnContactForm(name: string, email: string, message: string) {
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL', 'info@aspireacademicco.co.uk');
+    const subject = `New Contact Form Submission from ${name}`;
+    const text = `
+      Name: ${name}
+      Email: ${email}
+      
+      Message:
+      ${message}
+    `;
+    
+    await this.sendMail(adminEmail, subject, text);
   }
 
   async sendDirectEmail(to: string, subject: string, message: string) {

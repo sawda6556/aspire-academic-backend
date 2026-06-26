@@ -27,6 +27,10 @@ Go to the **Variables** tab of your backend service and add the following (value
 | `POSTGRES_HOST` | `${{Postgres.DATABASE_URL}}` (or use Railway's auto-injected variables) |
 | `JWT_SECRET` | [Generate a random long string] |
 | `CORS_ORIGIN` | `https://aspireacademicco.co.uk` |
+| `STRIPE_TEST_SECRET_KEY` | [Your Stripe Test Key] |
+| `STRIPE_LIVE_SECRET_KEY` | [Your Stripe Live Key] |
+| `STRIPE_WEBHOOK_SECRET` | [Your Stripe Webhook Signing Secret] |
+| `ADMIN_EMAIL` | `info@aspireacademicco.co.uk` |
 
 *Note: If you use Railway's Postgres service, you can often just link the variables directly using `${{Postgres.PGHOST}}`, etc.*
 
