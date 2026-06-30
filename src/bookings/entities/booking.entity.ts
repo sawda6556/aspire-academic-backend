@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { TutorProfile } from '../../tutor-profiles/entities/tutor-profile.entity';
 import { StudentProfile } from '../../student-profiles/entities/student-profile.entity';
-import { BookingStatus } from '../../common/enums';
+import { BookingStatus, AttendanceStatus } from '../../common/enums';
 
 @Entity('bookings')
 export class Booking {
@@ -34,6 +34,21 @@ export class Booking {
 
   @Column({ default: false })
   reminder_1h_sent: boolean;
+
+  @Column({ type: 'enum', enum: AttendanceStatus, nullable: true })
+  tutor_attendance_report: AttendanceStatus;
+
+  @Column({ type: 'enum', enum: AttendanceStatus, nullable: true })
+  student_attendance_report: AttendanceStatus;
+
+  @Column({ default: false })
+  is_disputed: boolean;
+
+  @Column({ nullable: true })
+  dispute_reason: string;
+
+  @Column({ default: false })
+  confirmation_notification_sent: boolean;
 
   @CreateDateColumn()
   created_at: Date;

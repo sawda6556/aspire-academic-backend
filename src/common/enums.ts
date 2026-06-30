@@ -21,6 +21,12 @@ export enum BookingStatus {
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED',
+  DISPUTED = 'DISPUTED',
+}
+
+export enum AttendanceStatus {
+  PRESENT = 'PRESENT',
+  NO_SHOW = 'NO_SHOW',
 }
 
 export enum ResourceStatus {
