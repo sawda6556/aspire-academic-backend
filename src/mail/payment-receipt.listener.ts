@@ -35,8 +35,68 @@ export class PaymentReceiptListener {
         items: payload.items,
         date: payload.date,
       });
+
+      await this.mailService.notifyAdminOnPayment(user, {
+        orderId: payload.orderId,
+        amount: payload.amount,
+        currency: payload.currency,
+        items: payload.items,
+        date: payload.date,
+      });
     } catch (error) {
       console.error('Error handling payment.success event:', error);
+    }
+  }
+
+  @OnEvent('payment.failed')
+  async handlePaymentFailed(payload: {
+    userId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    error?: string;
+  }) {
+    try {
+      const user = await this.usersRepository.findOne({ where: { id: payload.userId } });
+      if (!user) return;
+      await this.mailService.notifyAdminOnPaymentFailure(user, payload);
+    } catch (error) {
+      console.error('Error handling payment.failed event:', error);
+    }
+  }
+
+  @OnEvent('payment.refunded')
+  async handlePaymentRefunded(payload: {
+    userId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    reason?: string;
+  }) {
+    try {
+      const user = await this.usersRepository.findOne({ where: { id: payload.userId } });
+      if (!user) return;
+      await this.mailService.notifyAdminOnRefund(user, payload);
+    } catch (error) {
+      console.error('Error handling payment.refunded event:', error);
+    }
+  }
+
+  @OnEvent('payment.disputed')
+  async handlePaymentDisputed(payload: {
+    userId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    disputeId: string;
+    reason?: string;
+  }) {
+    try {
+      const user = await this.usersRepository.findOne({ where: { id: payload.userId } });
+      if (!user) return;
+      await this.mailService.notifyAdminOnDispute(user, payload);
+    } catch (error) {
+      console.error('Error handling payment.disputed event:', error);
     }
   }
 }

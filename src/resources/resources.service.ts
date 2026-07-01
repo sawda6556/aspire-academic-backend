@@ -131,11 +131,13 @@ export class ResourcesService {
 
     // Real or Mock Stripe Session (StripeService handles LAUNCH_MODE)
     const session = await this.stripeService.createCheckoutSession(
+      userId,
       Math.round(price * 100),
       'gbp',
       `${process.env.FRONTEND_URL}/store/success?id=${resourceId}`,
       `${process.env.FRONTEND_URL}/store/${resourceId}`,
       finalStripePriceId,
+      { resourceId },
     );
 
     const purchase = this.purchaseRepository.create({

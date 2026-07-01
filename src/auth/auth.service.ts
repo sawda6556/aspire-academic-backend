@@ -75,7 +75,7 @@ export class AuthService {
       this.mailService.sendWelcomeEmail(userWithFullName).catch(err => 
         console.error('Failed to send welcome email:', err)
       );
-      this.mailService.notifyAdminOnRegistration(userWithFullName, profile_data).catch(err =>
+      this.mailService.notifyAdminOnRegistration(userWithFullName, profile_data || { full_name, parent_id }).catch(err =>
         console.error('Failed to notify admin on registration:', err)
       );
 
