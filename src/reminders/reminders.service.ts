@@ -16,7 +16,7 @@ export class RemindersService {
     private readonly mailService: MailService,
   ) {}
 
-  @Cron(CronExpression.EVERY_15_MINUTES)
+  @Cron('0 */15 * * * *')
   async handleReminders() {
     this.logger.debug('Running lesson reminders cron job');
     await this.send24hReminders();
