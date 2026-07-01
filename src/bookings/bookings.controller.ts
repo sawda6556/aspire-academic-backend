@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, ForbiddenException, Param, Patch } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { ReportAttendanceDto } from './dto/report-attendance.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserType } from '../common/enums';
 
@@ -26,5 +27,14 @@ export class BookingsController {
     } else {
       return this.bookingsService.findAllByStudent(req.user.id);
     }
+  }
+
+  @Patch(':id/report-attendance')
+  async reportAttendance(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: ReportAttendanceDto,
+  ) {
+    return this.bookingsService.reportAttendance(req.user.id, id, dto.attendance);
   }
 }
